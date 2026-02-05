@@ -35,3 +35,26 @@
 - **Thymeleaf**  
 - **TypeScript**  
 - **Maven**
+
+## Screenshots
+
+### Login
+<p align="center">
+  <img src="screenshots/login.png" width="400"/>
+</p>
+
+### Admin Dashboard
+<p align="center">
+  <img src="screenshots/admin_dashboard.png" width="400"/>
+</p>
+
+### Send Bill
+<p align="center">
+  <img src="screenshots/send_bill.png" width="400"/>
+</p>
+
+### Announcements
+<p align="center">
+  <img src="screenshots/announcements.png" width="400"/>
+</p>
+
