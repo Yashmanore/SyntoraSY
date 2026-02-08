@@ -1,96 +1,194 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"  th:lang="${#locale.language}">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head th:replace="fragments/header :: head"></head>
 
 <body>
 
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #f8fafc, #e8edf3);
+        padding-bottom: 100px;
+    }
+
+    body {
+        padding-top: 80px;
+    }
+
+    .syntora-btn {
+        background: #c9a227;
+        color: white;
+        border: none;
+        padding: 14px 40px;
+        border-radius: 40px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .syntora-btn:hover {
+        background: #b48e1d;
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    }
+
+    .feature-card {
+        border-radius: 18px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+        padding: 2rem;
+        background-color: #ffffff;
+        transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-12px);
+        box-shadow: 0 25px 60px rgba(0,0,0,0.12);
+    }
+
+    .section-title {
+        font-size: 2.3rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .section-title::after {
+        content: "";
+        width: 70px;
+        height: 4px;
+        background: #c9a227;
+        display: block;
+        margin: 15px auto 0;
+        border-radius: 2px;
+    }
+</style>
+
 <!-- Header -->
 <div th:replace="fragments/header :: body"></div>
 
-<!-- Hero Banner -->
-<section class="py-5 text-center bg-light mt-5 pt-5">
+<!-- Hero Section -->
+<section class="hero-section py-5 text-center mt-5 pt-5">
     <div class="container">
-        <h1 class="display-4 fw-bold" th:text="#{home.welcome}">
-            Welcome to Syntora
+
+        <h1 class="display-4 fw-bold">
+            Smart & Affordable Society Management for Indian Communities
         </h1>
 
-        <p class="lead" th:text="#{home.tagline}">
-            Your Smart Solution for Society Management
+        <p class="lead mt-3">
+            Syntora helps housing societies manage maintenance bills, residents,
+            payments, and communication — all in one simple and cost-effective platform.
         </p>
 
-        <a href="#features"
-           class="btn btn-primary btn-lg mt-3"
-           th:text="#{home.explore}">
-            Explore Features
+        <a href="/register" class="btn btn-lg mt-4 syntora-btn">
+            Start Managing Your Society
         </a>
+
+        <p class="mt-3 text-muted small">
+            Designed for apartments, co-operative housing societies, and gated communities across India.
+        </p>
+
     </div>
 </section>
 
-<!-- About Us -->
+<!-- About Section -->
 <section id="about-us" class="py-5">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-md-6">
-                <img src="/images/about-us-image.png"
-                     class="img-fluid rounded"
-                     alt="About Us">
-            </div>
-            <div class="col-md-6">
-                <h2 th:text="#{about.title}">About Syntora</h2>
 
-                <p class="lead" th:text="#{about.subtitle}">
-                    Simplifying community life with our cutting-edge platform.
+            <div class="col-md-6">
+                <img src="/images/about-us.png"
+                     class="img-fluid rounded shadow"
+                     style="height: 450px; width: 100%; object-fit: cover;"
+                     alt="About Syntora">
+            </div>
+
+            <div class="col-md-6">
+                <h2>Why Choose Syntora?</h2>
+
+                <p class="lead">
+                    Built for Indian housing societies that need simplicity and affordability.
                 </p>
 
-                <p th:text="#{about.description}">
-                    We bring transparency, ease, and efficiency to managing societies.
+                <p>
+                    Managing maintenance collections, resident records, and society communication
+                    can be time-consuming and manual. Syntora simplifies these everyday tasks
+                    through a secure and easy-to-use web platform.
+                </p>
+
+                <p>
+                    Whether your society has 20 flats or 200, Syntora helps reduce paperwork,
+                    improve transparency, and keep everything organized digitally.
                 </p>
             </div>
+
         </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="py-5 bg-white">
+    <div class="container text-center">
+
+        <h2 class="section-title">How Syntora Works</h2>
+
+        <div class="row mt-4">
+
+            <div class="col-md-4">
+                <h5>1. Register Your Society</h5>
+                <p>Create your society profile and configure essential details.</p>
+            </div>
+
+            <div class="col-md-4">
+                <h5>2. Add Residents & Admins</h5>
+                <p>Add resident details, assign roles, and organize flats easily.</p>
+            </div>
+
+            <div class="col-md-4">
+                <h5>3. Manage & Monitor</h5>
+                <p>Generate bills, track payments, send notices, and monitor updates in real time.</p>
+            </div>
+
+        </div>
+
     </div>
 </section>
 
 <!-- Features -->
 <section id="features" class="py-5 bg-light">
     <div class="container">
-        <h2 class="section-title" th:text="#{features.title}">
-            Key Features
-        </h2>
+
+        <h2 class="section-title">Key Features</h2>
 
         <div class="row g-4">
 
             <div class="col-md-4">
                 <div class="feature-card text-center">
                     <i class="bi bi-shield-lock-fill fs-1 text-primary"></i>
-                    <h4 class="mt-3" th:text="#{features.admin}">
-                        Admin Control
-                    </h4>
-                    <p th:text="#{features.admin.desc}">
-                        Manage users, settings, and roles securely.
+                    <h4 class="mt-3">Admin Dashboard</h4>
+                    <p>
+                        Secure role-based access with full control over residents,
+                        billing settings, and society data.
                     </p>
                 </div>
             </div>
 
             <div class="col-md-4">
                 <div class="feature-card text-center">
-                    <i class="bi bi-house-fill fs-1 text-success"></i>
-                    <h4 class="mt-3" th:text="#{features.society}">
-                        Society Admin
-                    </h4>
-                    <p th:text="#{features.society.desc}">
-                        Manage residents, billing, and announcements.
+                    <i class="bi bi-receipt fs-1 text-success"></i>
+                    <h4 class="mt-3">Maintenance Billing</h4>
+                    <p>
+                        Generate monthly maintenance bills, track payments,
+                        apply late fees, and send receipts easily.
                     </p>
                 </div>
             </div>
 
             <div class="col-md-4">
                 <div class="feature-card text-center">
-                    <i class="bi bi-person-lines-fill fs-1 text-warning"></i>
-                    <h4 class="mt-3" th:text="#{features.resident}">
-                        Residents
-                    </h4>
-                    <p th:text="#{features.resident.desc}">
-                        Access bills, payments, and updates easily.
+                    <i class="bi bi-people-fill fs-1 text-warning"></i>
+                    <h4 class="mt-3">Resident Management</h4>
+                    <p>
+                        Maintain resident records, manage flats,
+                        and streamline society communication in one place.
                     </p>
                 </div>
             </div>
@@ -99,43 +197,190 @@
     </div>
 </section>
 
+<!-- Who Is It For -->
+<section class="py-5 bg-white">
+    <div class="container">
+
+        <h2 class="section-title">Built For</h2>
+
+        <div class="row g-4 mt-4">
+
+            <div class="col-md-6">
+                <div class="feature-card h-100">
+                    <h4 class="mb-3">For Society Admins</h4>
+                    <ul>
+                        <li>Generate and manage maintenance bills</li>
+                        <li>Track payments and apply late fees</li>
+                        <li>Upload and manage resident records</li>
+                        <li>Send bulk notices and announcements</li>
+                        <li>Maintain complete transparency</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="feature-card h-100">
+                    <h4 class="mb-3">For Residents</h4>
+                    <ul>
+                        <li>View maintenance dues anytime</li>
+                        <li>Receive bills and payment receipts</li>
+                        <li>Stay updated with society notices</li>
+                        <li>Access profile details securely</li>
+                        <li>Communicate easily with society admin</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+
+        <h2 class="section-title">Frequently Asked Questions</h2>
+
+        <div class="accordion mt-4" id="faqAccordion">
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#faq1">
+                        Is Syntora suitable for small housing societies?
+                    </button>
+                </h2>
+                <div id="faq1" class="accordion-collapse collapse"
+                     data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        Yes. Syntora is designed for societies of all sizes,
+                        whether you have 20 flats or 200.
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#faq2">
+                        Does Syntora require installation?
+                    </button>
+                </h2>
+                <div id="faq2" class="accordion-collapse collapse"
+                     data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        No installation required. Syntora is a web-based platform
+                        that works directly from your browser.
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#faq3">
+                        Is my society data secure?
+                    </button>
+                </h2>
+                <div id="faq3" class="accordion-collapse collapse"
+                     data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        Yes. Syntora uses secure access control and role-based permissions
+                        to ensure that your society’s data remains protected.
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#faq4">
+                        How affordable is Syntora?
+                    </button>
+                </h2>
+                <div id="faq4" class="accordion-collapse collapse"
+                     data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        Syntora is built as an affordable Indian SaaS solution.
+                        Pricing is designed to suit housing societies without
+                        adding financial burden.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<!-- Call To Action -->
+<section class="py-5" style="background: linear-gradient(90deg, #4e657f, #3f566f);">
+    <div class="container text-center text-white">
+
+        <h2 class="fw-bold mb-3">
+            Ready to Simplify Your Society Management?
+        </h2>
+
+        <p class="lead mb-4">
+            Join early and bring transparency, efficiency,
+            and digital convenience to your housing society.
+        </p>
+
+        <a href="/register" class="btn btn-lg syntora-btn">
+            Register Your Society Today
+        </a>
+
+        <p class="mt-3 small opacity-75">
+            Simple onboarding • Affordable pricing • Built for Indian societies
+        </p>
+
+    </div>
+</section>
+
+
 <!-- Contact -->
 <section id="contact" class="py-5">
     <div class="container">
-        <h2 class="section-title" th:text="#{contact.title}">
-            Get in Touch
-        </h2>
+
+        <h2 class="section-title">Get in Touch</h2>
 
         <div class="row g-4">
 
             <div class="col-md-4">
                 <div class="card p-3 h-100">
-                    <h5 th:text="#{contact.address}">Address</h5>
-                    <p th:text="#{contact.address.value}">
-                        Don Bosco Institute of Technology, Kurla(West)
+                    <h5>Address</h5>
+                    <p>
+                        Mumbai, Maharashtra<br>
+                        India
                     </p>
                 </div>
             </div>
 
             <div class="col-md-4">
                 <div class="card p-3 h-100">
-                    <h5 th:text="#{contact.email}">Email</h5>
-                    <a href="mailto:societyhub@example.com">
-                        societyhub@example.com
+                    <h5>Email</h5>
+                    <a href="mailto:contact@syntora.com">
+                        contact@syntora.com
                     </a>
                 </div>
             </div>
 
             <div class="col-md-4">
                 <div class="card p-3 h-100">
-                    <h5 th:text="#{contact.phone}">Phone</h5>
+                    <h5>Phone</h5>
                     <a href="tel:+911234567890">
-                        +91 1234567890
+                        +91 12345 67890
                     </a>
                 </div>
             </div>
 
         </div>
+
     </div>
 </section>
 

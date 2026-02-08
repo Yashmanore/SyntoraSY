@@ -1,0 +1,23 @@
+server:
+  port: 5000
+
+spring:
+  main:
+    web-application-type: servlet
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/syntora
+    username: syntora_user
+    password: Vsengg_27
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+
+vaadin:
+  productionMode: true
+  launch-browser: false
+  devmode:
+    enabled: false

@@ -2,6 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org"
       th:lang="${#locale.language}">
 
+<style>
+    .footer {
+        background: linear-gradient(90deg, #5f7c9b, #4f6a87);
+        color: white;
+        padding: 2rem 0;
+    }
+
+</style>
 <footer class="footer gradient-bg text-white mt-auto">
     <div class="container py-4">
 
@@ -9,7 +17,7 @@
             <div class="col-md-6">
                 <h5 th:text="#{footer.brand}">Syntora</h5>
                 <p th:text="#{footer.description}">
-                    Community management platform
+                    Society management platform
                 </p>
             </div>
 
@@ -43,5 +51,4 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
-</body>
 </html>

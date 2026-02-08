@@ -12,130 +12,147 @@
     <th:block th:replace="fragments/sidebar :: sidebar-css"></th:block>
 
     <style>
-
         :root {
-            --brand-blue-dark: #1e40af;
-            --brand-blue-main: #2563eb;
-            --brand-blue-light: #dbeafe;
+            --brand-primary: #315e87;
+            --brand-primary-dark: #274f75;
+            --brand-accent: #c9a227;
+
+            --bg-main: #f4f7fb;
+            --bg-soft: #eaf1f8;
+            --sidebar-bg: #0f172a;
+
+            --danger: #dc2626;
         }
 
-        /* Top admin header */
+        /* Page background */
+        body {
+            background: var(--bg-main);
+        }
+
+        /* Top header */
         .admin-header {
-            margin-left: 220px;          /* align with sidebar */
-            height: 64px;
-            background: var(--brand-blue-light);
+            margin-left: 240px;
+            height: 70px;
+            background: white;
             display: flex;
             align-items: center;
-            padding: 0 24px;
-            border-bottom: 1px solid #c7dbf5;
+            padding: 0 28px;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .admin-header h2 {
             margin: 0;
             font-size: 22px;
             font-weight: 600;
-            color: #1e3a8a;
+            color: var(--brand-primary);
         }
 
-        /* Main page content */
+        /* Main content */
         .main-content {
             margin-left: 240px;
-            padding: 24px;
+            padding: 32px;
         }
 
-
-        .sticky-notes-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
+        /* Form area */
+        #add-note-form {
+            background: white;
             padding: 20px;
-            min-height: 400px;
-            background: #f5f9ff;
             border-radius: 12px;
-            margin-top: 20px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+        }
+
+        /* Brand Button */
+        .brand-btn {
+            background: var(--brand-primary);
+            color: white;
+            border: none;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all .2s ease;
+        }
+
+        .brand-btn:hover {
+            background: var(--brand-primary-dark);
+            transform: translateY(-1px);
+        }
+
+        /* Notes container */
+        .sticky-notes-container {
+            margin-top: 30px;
+            padding: 30px;
+            border-radius: 16px;
+            background: var(--bg-soft);
+        }
+
+        /* Sticky note */
+        .sticky-notes-container {
+            margin-top: 30px;
+            padding: 30px;
+            border-radius: 16px;
+            background: #eef3f9;
+
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 24px;
         }
 
         .sticky-note {
             position: relative;
-            background-color: #fffacd;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-            width: 240px;
-            font-family: 'Indie Flower', cursive;
-            transform: rotate(-2deg);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
+            background: white;
+            padding: 22px;
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+             box-shadow: 0 4px 10px rgba(0,0,0,0.04), 0 12px 24px rgba(53,105,153,0.08);
+            transition: all 0.25s ease;
 
-        /* Softer pastel sticky notes */
-        .sticky-note:nth-child(3n) {
-            background-color: #fef9c3;   /* light pastel yellow */
-            transform: rotate(1.5deg);
-        }
-
-        .sticky-note:nth-child(3n+1) {
-            background-color: #ffedd5;   /* light peach */
-            transform: rotate(-2deg);
-        }
-
-        .sticky-note:nth-child(3n+2) {
-            background-color: #dcfce7;   /* soft mint green */
-            transform: rotate(2.5deg);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 160px;
         }
 
         .sticky-note:hover {
-            transform: scale(1.03) rotate(0deg);
-            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.2);
+            transform: translateY(-4px);
+            box-shadow: 0 14px 30px rgba(53,105,153,0.12);
+        }
+
+        .sticky-note h6 {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--brand-primary);
+        }
+
+        .sticky-note p {
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 16px;
         }
 
         .sticky-note::before {
             content: '';
-            width: 16px;
-            height: 16px;
-            background: #2563eb;
+            width: 8px;
+            height: 8px;
+            background: var(--brand-accent);
             border-radius: 50%;
             position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            top: 12px;
+            right: 16px;
         }
 
         .sticky-note h6 {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .sticky-note p {
-            font-size: 17px;
-            color: #444;
-            line-height: 1.5;
-            margin-bottom: 10px;
-            word-break: break-word;
+            color: var(--brand-primary);
+            font-weight: 600;
         }
 
         .sticky-note button {
-            background-color: #f87171;
-            color: white;
+            align-self: flex-start;
+            background: var(--danger);
             border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
+            padding: 6px 14px;
+            border-radius: 8px;
+            color: white;
             font-weight: 600;
-            transition: background-color 0.2s ease;
-        }
-
-        .sticky-note button:hover {
-            background-color: #c62828;
-        }
-
-        @media (max-width: 600px) {
-            .sticky-note {
-                width: 100%;
-            }
+            font-size: 13px;
         }
     </style>
 </head>
@@ -145,14 +162,13 @@
 <!-- Navbar Fragment -->
 <th:block th:replace="fragments/sidebar :: sidebar('admin')"></th:block>
 
-<!--<div class="main-content" style="margin-left: 220px; padding: 20px;">-->
-<!--    <h2 class="text-center mb-4">Admin Sticky Notes</h2>-->
-<!--<div class="admin-header">-->
-<!--    <h2>Admin Sticky Notes</h2>-->
-<!--    <div class="ms-auto">-->
-<!--        <span class="text-muted small">Admin Panel</span>-->
-<!--    </div>-->
-<!--</div>-->
+
+<div class="admin-header">
+    <h2>Sticky Notes</h2>
+    <div class="ms-auto">
+        <span class="text-muted small">Admin Panel</span>
+    </div>
+</div>
 
 <div class="main-content">
 
@@ -166,7 +182,7 @@
                 <input type="text" name="message" th:placeholder="#{admin.sticky.addMessage}" class="form-control" required>
             </div>
             <div class="col-md-2">
-                <button class="btn btn-success w-100" th:text="#{admin.sticky.addButton}">Add Note</button>
+                <button class="btn w-100 brand-btn" th:text="#{admin.sticky.addButton}">Add Note</button>
             </div>
         </div>
     </form>

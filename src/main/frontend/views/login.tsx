@@ -181,7 +181,7 @@ export function Login() {
     return (
         <div className="auth-container">
             <div className="society-registration-container">
-                <h2>Login</h2>
+                <h2 style={{ textTransform: "none" }}>Login to Syntora</h2>
 
                 <div className="society-registration-sidebar">
                     <button onClick={() => setIsNewSociety(true)}>Admin Login</button>
@@ -276,7 +276,10 @@ export function Login() {
                                     onChange={(e) => setResidentPassword(e.target.value)}
                                     required
                                 />
-                                <button type="submit">Login</button>
+                                <h2 style={{ textTransform: "none" }}>Login to Syntora</h2>
+                                <p style={{ color: "#6c757d", marginBottom: "20px" }}>
+                                Secure access to your society dashboard.
+                                </p>
                                 <p>
                                     <a
                                         href="#"
