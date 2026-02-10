@@ -28,6 +28,7 @@
     "lit": "3.1.4",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "react-icons": "^5.5.0",
     "react-router-dom": "6.23.1"
   },
   "devDependencies": {
@@ -116,7 +117,7 @@
       "workbox-core": "7.1.0",
       "workbox-precaching": "7.1.0"
     },
-    "hash": "835869ebdae4bf2b0e5eb6905d31ef17639cabd343beb94a7566735251622e6a"
+    "hash": "ad8441d87a26af2494f3bb288981aa07979363bc94e44facc7ac9d03eca9eea0"
   },
   "overrides": {
     "@vaadin/bundles": "$@vaadin/bundles",
@@ -144,6 +145,7 @@
     "@vaadin/vaadin-themable-mixin": "$@vaadin/vaadin-themable-mixin",
     "@vaadin/vaadin-lumo-styles": "$@vaadin/vaadin-lumo-styles",
     "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles",
-    "bcryptjs": "$bcryptjs"
+    "bcryptjs": "$bcryptjs",
+    "react-icons": "$react-icons"
   }
 }

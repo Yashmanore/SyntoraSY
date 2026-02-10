@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../themes/my-theme/auth.css';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 interface AdminRegistrationData {
     name: string;
@@ -11,6 +12,9 @@ interface AdminRegistrationData {
 }
 
 export function AdminRegistration() {
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     const [formData, setFormData] = useState<AdminRegistrationData>({
         name: '',
         contact_no: '',
@@ -128,6 +132,7 @@ export function AdminRegistration() {
                 />
                 {errors.contact_no && <span className="error">{errors.contact_no}</span>}
 
+                <div className="password-field">
                 <input
                     type="email"
                     name="email_id"
@@ -136,26 +141,45 @@ export function AdminRegistration() {
                     placeholder="Email"
                     required
                 />
+                </div>
                 {errors.email_id && <span className="error">{errors.email_id}</span>}
 
-                <input
-                    type="password"
-                    name="adminPassword"
-                    value={formData.adminPassword}
-                    onChange={handleChange}
-                    placeholder="Password"
-                    required
-                />
+                <div className="password-field">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        name="adminPassword"
+                        value={formData.adminPassword}
+                        onChange={handleChange}
+                        placeholder="Password"
+                        required
+                    />
+                    <span
+                        className="toggle-password"
+                        onClick={() => setShowPassword(!showPassword)}
+                    >
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </span>
+                </div>
+
                 {errors.adminPassword && <span className="error">{errors.adminPassword}</span>}
 
-                <input
-                    type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="Confirm Password"
-                    required
-                />
+                <div className="password-field">
+                    <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="Confirm Password"
+                        required
+                    />
+                    <span
+                        className="toggle-password"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                    </span>
+                </div>
+
                 {errors.confirmPassword && <span className="error">{errors.confirmPassword}</span>}
 
                 <button type="submit" title="Submit the registration form">Register</button>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import '../themes/my-theme/auth.css';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export function Login() {
     const [email_id, setEmail_id] = useState('');
@@ -9,6 +10,10 @@ export function Login() {
     const [isNewSociety, setIsNewSociety] = useState(true);
     const [mygate_no, setMyGateNumber] = useState('');
     const [showSetPassword, setShowSetPassword] = useState(false); // Toggle for "Set Password" flow
+    const [showPassword, setShowPassword] = useState(false);
+    const [showResidentPassword, setShowResidentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [myotp, setotp] = useState('');
@@ -190,6 +195,7 @@ export function Login() {
 
                 {isNewSociety ? (
                     <form noValidate>
+                    <div className="password-field">
                         <input
                             type="text"
                             placeholder="Email"
@@ -197,13 +203,23 @@ export function Login() {
                             onChange={(e) => setEmail_id(e.target.value)}
                             required
                         />
-                        <input
-                            type="password"
-                            placeholder="Password"
-                            value={adminPassword}
-                            onChange={(e) => setAdminPassword(e.target.value)}
-                            required
-                        />
+                        </div>
+                        <div className="password-field">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Password"
+                                value={adminPassword}
+                                onChange={(e) => setAdminPassword(e.target.value)}
+                                required
+                            />
+                            <span
+                                className="toggle-password"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </span>
+                        </div>
+
                         <button type="button" title="Login" onClick={handleAdminLogin}>
                             Admin Login
                         </button>
@@ -240,6 +256,7 @@ export function Login() {
 
                                 {isOtpValidated && (
                                     <>
+                                    <div className="password-field">
                                         <input
                                             type="password"
                                             placeholder="Create Password"
@@ -247,13 +264,22 @@ export function Login() {
                                             onChange={(e) => setNewPassword(e.target.value)}
                                             required
                                         />
-                                        <input
-                                            type="password"
-                                            placeholder="Confirm Password"
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            required
-                                        />
+                                    </div>
+                                        <div className="password-field">
+                                            <input
+                                                type={showConfirmPassword ? "text" : "password"}
+                                                placeholder="Confirm Password"
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                required
+                                            />
+                                            <span
+                                                className="toggle-password"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            >
+                                                {showConfirmPassword ? "🙈" : "👁"}
+                                            </span>
+                                        </div>
                                         <button type="submit" title="Submit">
                                             Submit
                                         </button>
@@ -262,6 +288,7 @@ export function Login() {
                             </form>
                         ) : (
                             <form noValidate onSubmit={handleResidentLogin}>
+                                <div className="password-field">
                                 <input
                                     type="text"
                                     placeholder="MyGate Number"
@@ -269,17 +296,23 @@ export function Login() {
                                     onChange={(e) => setMyGateNumber(e.target.value)}
                                     required
                                 />
-                                <input
-                                    type="password"
-                                    placeholder="Password"
-                                    value={residentPassword}
-                                    onChange={(e) => setResidentPassword(e.target.value)}
-                                    required
-                                />
-                                <h2 style={{ textTransform: "none" }}>Login to Syntora</h2>
-                                <p style={{ color: "#6c757d", marginBottom: "20px" }}>
-                                Secure access to your society dashboard.
-                                </p>
+                                </div>
+                                <div className="password-field">
+                                    <input
+                                        type={showResidentPassword ? "text" : "password"}
+                                        placeholder="Password"
+                                        value={residentPassword}
+                                        onChange={(e) => setResidentPassword(e.target.value)}
+                                        required
+                                   />
+                                    <span
+                                        className="toggle-password"
+                                        onClick={() => setShowResidentPassword(!showResidentPassword)}
+                                    >
+                                        {showResidentPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </span>
+                                </div>
+                                <button type="submit">Login</button>
                                 <p>
                                     <a
                                         href="#"

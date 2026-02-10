@@ -204,3 +204,31 @@ h2 {
     color: #274f75 !important;
     text-decoration: underline;
 }
+
+.password-field {
+    position: relative;
+    width: 100vh;
+    max-width: 500px;
+}
+
+.password-field input {
+    width: 100vh;
+    max-width: 500px;
+    padding-right: 45px;
+    box-sizing: border-box;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 38%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 18px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+}
+
+
+
