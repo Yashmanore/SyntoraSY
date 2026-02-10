@@ -176,13 +176,13 @@
     <form id="add-note-form">
         <div class="row g-2">
             <div class="col-md-4">
-                <input type="text" name="title" class="form-control" th:placeholder="#{admin.sticky.addTitle}" required>
+                <input type="text" id="note-title" name="title" class="form-control" required>Add Title
             </div>
             <div class="col-md-6">
-                <input type="text" name="message" th:placeholder="#{admin.sticky.addMessage}" class="form-control" required>
+                <input type="text" id="note-message" name="message" class="form-control" required>Add message
             </div>
             <div class="col-md-2">
-                <button class="btn w-100 brand-btn" th:text="#{admin.sticky.addButton}">Add Note</button>
+                <button class="btn w-100 brand-btn">Add Note</button>
             </div>
         </div>
     </form>
@@ -192,10 +192,10 @@
     <!-- Notes -->
     <div class="sticky-notes-container">
         <div class="sticky-note" th:each="note : ${notes}">
-            <h6 th:text="${note.title}"></h6>
-            <p th:text="${note.message}"></p>
+            <h6 th:text="${note.title}">Title</h6>
+            <p th:text="${note.message}">Message</p>
 
-            <button class="delete-btn" th:text="#{admin.sticky.deleteButton}">Delete</button>
+            <button class="delete-btn">Delete</button>
         </div>
     </div>
 

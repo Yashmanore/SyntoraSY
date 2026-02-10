@@ -1,9 +1,11 @@
 package com.example.societyhub.service;
 
 import com.example.societyhub.model.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,18 +16,21 @@ import java.util.HashSet;
 @Service
 public class DBHandler {
 
-    private static final String DB_URL = "jdbc:postgresql://localhost:5432/society_management";
-    private static final String DB_USER = "postgres";
-    private static final String DB_PASSWORD = "pgadmin4";
+
     @Autowired
-    private ExcelService  excelService;
-    public static Connection connectDB() throws SQLException {
-        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+    private MyGateService myGateService;
+
+    private final DataSource dataSource;
+
+    @Autowired
+    public DBHandler(DataSource dataSource, MyGateService myGateService) {
+        this.dataSource = dataSource;
+        this.myGateService = myGateService;
     }
 
     public List<Map<String, String>> queryResident(int sid) throws SQLException {
         List<Map<String, String>> residents = new ArrayList<>();
-        try (Connection connection = connectDB()) {
+        try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             String query = "select mem_id, name, room_no, mr_ms, gender, age, contact_no, mygate_no, email, bhk from resident where sid = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -62,7 +67,7 @@ public class DBHandler {
 
     public List<Resident> getResident(int sid) throws SQLException {
         List<Resident> residents = new ArrayList<>();
-        try (Connection connection = connectDB()) {
+        try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             String query = "select mem_id, name, room_no, mr_ms, gender, age, contact_no, mygate_no, email, bhk from resident where sid = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -104,7 +109,7 @@ public class DBHandler {
     public List<Resident> getResidentBillDetails(String month, int sid) throws SQLException {
         List<Resident> residents = new ArrayList<>();
 
-        try (Connection connection = connectDB()) {
+        try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             // Query to fetch resident details along with the boolean status for the given month
             String query = "SELECT r.mem_id, r.name, r.room_no, r.mr_ms, r.gender, r.age, r.contact_no, " +
@@ -153,7 +158,7 @@ public class DBHandler {
     public Resident getResident(String mygate_no) throws SQLException {
         Resident resident = null; // Initialize as null
 
-        try (Connection connection = connectDB()) {
+        try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
             String query = "select sid, name, room_no, mr_ms, gender, age, contact_no, email, bhk from resident where mygate_no = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -192,7 +197,7 @@ public class DBHandler {
 
         int societyId = -1;  // Default value to indicate if no ID is found
 
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
 
              PreparedStatement insertStatement = connection.prepareStatement(insertQuery);
              PreparedStatement selectStatement = connection.prepareStatement(selectQuery)) {
@@ -237,7 +242,7 @@ public class DBHandler {
 
     public boolean societyExists(String name) throws SQLException {
         String query = "select count(*) from society where name = ? ";
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             connection.setAutoCommit(false);
             statement.setString(1, name);
@@ -254,7 +259,7 @@ public class DBHandler {
         List<Society> societies = new ArrayList<>();
         String query = "select sid, name, street, landmark, pincode, city, state, country from society";
         System.out.println("Hello 1");
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query);
              ResultSet resultSet = preparedStatement.executeQuery()) {
             connection.setAutoCommit(false);
@@ -280,7 +285,7 @@ public class DBHandler {
     public boolean adminExists(String email) throws Exception {
         System.out.println("Welcome 1");
         String query = "select count(*) from login where email_id = ?";
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             System.out.println("Welcome 2");
             statement.setString(1, email);
@@ -296,7 +301,7 @@ public class DBHandler {
     public void registerAdmin(String email, String hashedPassword) throws Exception {
         System.out.println("Welcome 3");
         String query = "insert into login (email_id, password) values (?, ?)";
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             connection.setAutoCommit(false);
             System.out.println("Welcome 4");
@@ -321,7 +326,7 @@ public class DBHandler {
         String query = "insert into resident (mem_id, sid, name, room_no, mr_ms, gender, age, contact_no, isadmin, mygate_no, bhk, email) values (?, ?, ?, ?, ?, ?, ?, ?, false, ?, ?, ?)";
 
         // Connect to the database
-        try (Connection connection = connectDB()) {
+        try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
             // Get the current highest mem_id for the society
@@ -339,7 +344,7 @@ public class DBHandler {
                 int mem_id = currentMaxMemId == 0 ? Integer.parseInt(resident.getSid() + "001") : currentMaxMemId + 1;
 
                 // Generate a unique MyGate number
-                String myGateNo = excelService.generateUniqueMyGateNumber(new HashSet<>());
+                String myGateNo = myGateService.generateUniqueMyGateNumber(new HashSet<>());
 
                 // Prepare statement for resident insertion
                 try (PreparedStatement statement = connection.prepareStatement(query)) {
@@ -377,7 +382,7 @@ public class DBHandler {
     public void deleteResident(String mygate_no) throws Exception {
         System.out.println("Welcome 3");
         String query = "delete from resident where mygate_no = ? ";
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             connection.setAutoCommit(false);
             System.out.println("On the way to delete");
@@ -397,7 +402,7 @@ public class DBHandler {
         // Updated SQL query to reference the correct column name
         String sql = "update resident set room_no = ?, mr_ms = ?, gender = ?, age = ?, contact_no = ?, bhk = ?, email = ? where mygate_no = ?";
 
-        try (Connection connection = connectDB(); // Implement your database connection method
+        try (Connection connection = dataSource.getConnection(); // Implement your database connection method
              PreparedStatement statement = connection.prepareStatement(sql)){
             connection.setAutoCommit(false);
 
@@ -433,7 +438,7 @@ public class DBHandler {
 
         String sql = "update resident_bill set " + columnName + " = ? where mygate_no = ?";
 
-        try (Connection connection = connectDB(); // Implement your database connection method
+        try (Connection connection = dataSource.getConnection(); // Implement your database connection method
              PreparedStatement statement = connection.prepareStatement(sql)) {
             connection.setAutoCommit(false);
 
@@ -461,7 +466,7 @@ public class DBHandler {
         String validateSocietyQuery = "select count(*) from society where sid = ?";
         String updateSocietyQuery = "update society set admin_id = ? where sid = ?";
 
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement validateSocietyStatement = connection.prepareStatement(validateSocietyQuery);
              PreparedStatement getMaxMemIdStatement = connection.prepareStatement(memIdQuery);
              PreparedStatement insertResidentStatement = connection.prepareStatement(insertResidentQuery);
@@ -536,7 +541,7 @@ public class DBHandler {
         String queryResidentDetails = "select name, contact_no, sid from resident where mem_id = ?";
         Admin admin = new Admin(); // Assuming Admin class has a no-argument constructor
 
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmtMemId = conn.prepareStatement(queryMemId);
              PreparedStatement pstmtResidentDetails = conn.prepareStatement(queryResidentDetails)) {
 
@@ -580,7 +585,7 @@ public class DBHandler {
         String queryAdmin = "select name, contact_no, mygate_no, email from resident where sid = ? and isadmin = true";
         Admin admin = new Admin();
 
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmtAdmin= conn.prepareStatement(queryAdmin)) {
 
             // Step 1: Get mem_id from the login table
@@ -611,7 +616,7 @@ public class DBHandler {
 
     public Boolean isDataUploaded(int sid) throws Exception {
         String query = "select data_uploaded from society where sid = ?";
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             System.out.println("Query: " + query); // Debugging
             System.out.println("SID: " + sid);     // Debugging
@@ -630,7 +635,7 @@ public class DBHandler {
 
     public String getPasswordByEmail(String email) throws Exception {
         String query = "select password from login where email_id = ?";
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, email);
             ResultSet resultSet = statement.executeQuery();
@@ -643,7 +648,7 @@ public class DBHandler {
 
     public String getPasswordByMyGateNo(String mygate_no) throws Exception {
         String query = "select password from resident where mygate_no = ?";
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, mygate_no);
             ResultSet resultSet = statement.executeQuery();
@@ -656,7 +661,7 @@ public class DBHandler {
 
     public String getAdminPassword(String username) throws Exception {
         String query = "select password from admin where username = ?";
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, username);
             System.out.println("Username: " + username);
@@ -671,7 +676,7 @@ public class DBHandler {
     public Society getSocietyBySid(int sid) throws Exception {
         String query = "select name, street, landmark, locality, pincode, city, state from society where sid = ?";
         Society society = new Society();
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setInt(1, sid);
             ResultSet resultSet = statement.executeQuery();
@@ -693,7 +698,7 @@ public class DBHandler {
         String insertQuery = "INSERT INTO bill (sid, maintenance_contribution, housing_board_contribution, property_tax_contribution, sinking_fund, reserve_mhada_service_charge, sub_charge, fine, building_dev_fund, other, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         String updateQuery = "UPDATE bill SET maintenance_contribution = ?, housing_board_contribution = ?, property_tax_contribution = ?, sinking_fund = ?, reserve_mhada_service_charge = ?, sub_charge = ?, fine = ?, building_dev_fund = ?, other = ?, due_date = ?  WHERE sid = ?";
 
-        try (Connection connection = connectDB()) {
+        try (Connection connection = dataSource.getConnection()) {
             // Check if a bill already exists for the given sid
             try (PreparedStatement selectStatement = connection.prepareStatement(selectQuery)) {
                 connection.setAutoCommit(false);
@@ -748,7 +753,7 @@ public class DBHandler {
 
     public Bill fetchBillDetails(int sid) throws SQLException {
         Bill bill = null;
-        try (Connection connection = connectDB()) {
+        try (Connection connection = dataSource.getConnection()) {
             String query = "select * from bill where sid = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setInt(1, sid);
@@ -776,7 +781,7 @@ public class DBHandler {
 
     public Bill fetchBill(String mygate_no, String month, int sid) throws SQLException {
         Bill bill = null;
-        try (Connection connection = connectDB()) {
+        try (Connection connection = dataSource.getConnection()) {
             String query = "select * from bill where sid = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setInt(1, sid);
@@ -807,7 +812,7 @@ public class DBHandler {
     public Integer getNextBillNumber() {
         Integer billNo = null;
         String query = "select nextval('seq_bill_no')"; // Use your sequence name here
-        try (Connection connection = connectDB(); // Implement your database connection method
+        try (Connection connection = dataSource.getConnection(); // Implement your database connection method
              PreparedStatement statement = connection.prepareStatement(query);
              ResultSet resultSet = statement.executeQuery()) {
             if (resultSet.next()) {
@@ -823,7 +828,7 @@ public class DBHandler {
         // Updated SQL query to reference the correct column name
         String sql = "UPDATE resident SET password = ? WHERE mygate_no = ?";
 
-        try (Connection connection = connectDB(); // Implement your database connection method
+        try (Connection connection = dataSource.getConnection(); // Implement your database connection method
              PreparedStatement statement = connection.prepareStatement(sql)){
             connection.setAutoCommit(false);
 
@@ -840,7 +845,7 @@ public class DBHandler {
     public List<Note> getNotes(int sid) throws SQLException {
         List<Note> noteList = new ArrayList<>(); // Initialize the list to store To-Do items
 
-        try (Connection connection = connectDB()) {
+        try (Connection connection = dataSource.getConnection()) {
             // Updated query to select all To-Do items for the given societyId (sid)
             String query = "SELECT title, message FROM note WHERE sid = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -862,7 +867,7 @@ public class DBHandler {
     public List<Announcement> getAnnouncement(int sid) throws SQLException {
         List<Announcement> announcementList = new ArrayList<>(); // Initialize the list to store To-Do items
 
-        try (Connection connection = connectDB()) {
+        try (Connection connection = dataSource.getConnection()) {
             // Updated query to select all To-Do items for the given societyId (sid)
             String query = "SELECT title, message, category, created_at FROM announcements WHERE sid = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -891,7 +896,7 @@ public class DBHandler {
     public void addNote(String title, String message, int sid) throws Exception {
         String query = "INSERT INTO note (sid, title, message) VALUES (?, ?, ?)";
 
-        try (Connection connection = connectDB()) {
+        try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(query)) {
                 connection.setAutoCommit(false);
                 statement.setInt(1, sid);
@@ -910,7 +915,7 @@ public class DBHandler {
     public void addAnnouncement(String title, String message, String category, int sid) throws Exception {
         String query = "INSERT INTO announcements (sid, title, message, category, is_active) VALUES (?, ?, ?, ?, ?)";
 
-        try (Connection connection = connectDB()) {
+        try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(query)) {
                 connection.setAutoCommit(false);
                 statement.setInt(1, sid);
@@ -932,7 +937,7 @@ public class DBHandler {
     public void deleteNote(int sid, String title) throws Exception {
         System.out.println("Welcome 3");
         String query = "delete from note where sid = ? and title = ?";
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             connection.setAutoCommit(false);
             System.out.println("On the way to delete");
@@ -950,7 +955,7 @@ public class DBHandler {
     public void deleteAnnouncement(int sid, String title) throws Exception {
         System.out.println("Welcome 3");
         String query = "delete from announcements where sid = ? and title = ?";
-        try (Connection connection = connectDB();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             connection.setAutoCommit(false);
             System.out.println("On the way to delete");

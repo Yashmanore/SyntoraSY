@@ -20,7 +20,6 @@ public class SocietyController {
 
     @Autowired
     private DBHandler dbHandler;
-    @Autowired
     Admin admin = new Admin();
 
     private static final Logger Log = LogManager.getLogger(SocietyController.class);

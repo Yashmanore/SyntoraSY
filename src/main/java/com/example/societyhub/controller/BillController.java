@@ -1,5 +1,6 @@
 package com.example.societyhub.controller;
 
+import com.example.societyhub.service.BillingCalculationService;
 import com.example.societyhub.service.DBHandler;
 import com.example.societyhub.model.Bill;
 import com.example.societyhub.model.Society;
@@ -31,27 +32,24 @@ import java.util.Map;
 
 @Controller
 @RequestMapping("/api")
-@SessionAttributes("formData")
 public class BillController {
     private static final Logger Log = LogManager.getLogger(BillController.class);
 
     @Autowired
-    private DBHandler dbHandler;
+    private final DBHandler dbHandler;
+    private final BillingCalculationService billingCalculationService;
+
+    @Autowired
+    public BillController(DBHandler dbHandler,
+                          BillingCalculationService billingCalculationService,
+                          ThymeleafViewResolver thymeleafViewResolver) {
+        this.dbHandler = dbHandler;
+        this.billingCalculationService = billingCalculationService;
+        this.thymeleafViewResolver = thymeleafViewResolver;
+    }
 
     @Autowired
     private ThymeleafViewResolver thymeleafViewResolver;
-    double maintenanceContribution, subcharge, fine, other, buildingDevFund;
-    double housingBoardContribution;
-    double propertyTaxContribution;
-    double sinkingFund;
-    double reserveMhadaServiceCharge;
-    double arrears;
-    double creditBill;
-
-    double currentMonthTotal;
-    double amountDue;
-
-    String due_date;
 
     @GetMapping("/form")
     public String showForm(Model model, HttpSession session, HttpServletRequest request) throws SQLException {
@@ -97,18 +95,31 @@ public class BillController {
         model.addAttribute("society_name", society.getName());
         model.addAttribute("formData", formData);
 
+        double maintenanceContribution, subcharge, fine, other, buildingDevFund;
+        double housingBoardContribution;
+        double propertyTaxContribution;
+        double sinkingFund;
+        double reserveMhadaServiceCharge;
+        double arrears;
+        double creditBill;
+
+        double currentMonthTotal;
+        double amountDue;
+
+        String due_date;
+
         // Parse and retrieve form data
-        maintenanceContribution = parseDoubleSafely(formData.get("maintenance_contribution"));
-        housingBoardContribution = parseDoubleSafely(formData.get("housing_board_contribution"));
-        propertyTaxContribution = parseDoubleSafely(formData.get("property_tax_contribution"));
-        sinkingFund = parseDoubleSafely(formData.get("sinking_fund"));
-        reserveMhadaServiceCharge = parseDoubleSafely(formData.get("reserve_mhada_service_charge"));
-        subcharge = parseDoubleSafely(formData.get("sub_charge"));
-        other = parseDoubleSafely(formData.get("other"));
-        buildingDevFund = parseDoubleSafely(formData.get("building_dev_fund"));
-        fine = parseDoubleSafely(formData.get("fine"));
-        arrears = parseDoubleSafely(formData.get("arrears"));
-        creditBill = parseDoubleSafely(formData.get("credit_bill"));
+        maintenanceContribution = billingCalculationService.parseDoubleSafely(formData.get("maintenance_contribution"));
+        housingBoardContribution = billingCalculationService.parseDoubleSafely(formData.get("housing_board_contribution"));
+        propertyTaxContribution = billingCalculationService.parseDoubleSafely(formData.get("property_tax_contribution"));
+        sinkingFund = billingCalculationService.parseDoubleSafely(formData.get("sinking_fund"));
+        reserveMhadaServiceCharge = billingCalculationService.parseDoubleSafely(formData.get("reserve_mhada_service_charge"));
+        subcharge = billingCalculationService.parseDoubleSafely(formData.get("sub_charge"));
+        other = billingCalculationService.parseDoubleSafely(formData.get("other"));
+        buildingDevFund = billingCalculationService.parseDoubleSafely(formData.get("building_dev_fund"));
+        fine = billingCalculationService.parseDoubleSafely(formData.get("fine"));
+        arrears = billingCalculationService.parseDoubleSafely(formData.get("arrears"));
+        creditBill = billingCalculationService.parseDoubleSafely(formData.get("credit_bill"));
 
         // Perform calculations
         currentMonthTotal = maintenanceContribution + housingBoardContribution + propertyTaxContribution + sinkingFund + reserveMhadaServiceCharge + subcharge + other + buildingDevFund;
@@ -136,7 +147,21 @@ public class BillController {
         model.addAttribute("bldg_fund_due", formData.get("bldg_fund_due"));
         model.addAttribute("amount_due", amountDue);
 
+        Bill bill = new Bill();
+        bill.setSid(sid);
+        bill.setMaintenance_contribution((int) maintenanceContribution);
+        bill.setHousing_board_contribution((int) housingBoardContribution);
+        bill.setProperty_tax_contribution((int) propertyTaxContribution);
+        bill.setSinking_fund((int) sinkingFund);
+        bill.setReserve_mhada_service_charge((int) reserveMhadaServiceCharge);
+        bill.setSub_charge((int) subcharge);
+        bill.setFine(0);
+        bill.setBuilding_dev_fund((int) buildingDevFund);
+        bill.setOther((int) other);
+        bill.setDue_date(formData.get("due_date"));
 
+        dbHandler.insertOrUpdateBill(bill);
+        session.setAttribute("formData", formData);
 
         return "admin/bill"; // Thymeleaf template for the bill
     }
@@ -155,7 +180,7 @@ public class BillController {
 //        model.addAttribute("userName", userName);
         model.addAttribute("adminSocietyId", sid);
         model.addAllAttributes(formData);
-        return "bill_form"; // Return to the form with pre-filled values
+        return "admin/bill_form"; // Return to the form with pre-filled values
     }
 
 
@@ -172,7 +197,7 @@ public class BillController {
         // Add the calculated values to formData
         formData.put("current_month_total", String.valueOf(currentMonthTotal));
         formData.put("amount_due", String.valueOf(amountDue));
-        formData.put("amount_due_in_words", convertNumberToWords((int) amountDue));
+        formData.put("amount_due_in_words", BillingCalculationService.convertNumberToWords((int) amountDue));
         formData.put("fine", String.valueOf(0));
 
 
@@ -215,8 +240,15 @@ public class BillController {
     }
 
     @GetMapping("/preview-pdf")
-    public String previewPdf(@ModelAttribute("formData") Map<String, String> formData, HttpServletRequest request, Model model, HttpSession session) {
+    public String previewPdf(HttpServletRequest request, Model model, HttpSession session) {
         Integer sid = (Integer) session.getAttribute("adminSocietyId");
+        Map<String,String> formData =
+                (Map<String,String>) session.getAttribute("formData");
+
+        if (formData == null) {
+            model.addAttribute("error", "Form data missing in session");
+            return "error";
+        }
 
         if (sid == null) {
             model.addAttribute("error", "Session ID not found");
@@ -225,6 +257,32 @@ public class BillController {
 
         try {
             saveBillDetails(formData, request, model, session);
+            Bill bill = dbHandler.fetchBillDetails(sid);
+
+            double maintenanceContribution = billingCalculationService.parseDoubleSafely(String.valueOf(bill.getMaintenance_contribution()));
+            double housingBoardContribution = billingCalculationService.parseDoubleSafely(String.valueOf(bill.getHousing_board_contribution()));
+            double propertyTaxContribution = billingCalculationService.parseDoubleSafely(String.valueOf(bill.getProperty_tax_contribution()));
+            double sinkingFund = billingCalculationService.parseDoubleSafely(String.valueOf(bill.getSinking_fund()));
+            double reserveMhadaServiceCharge = billingCalculationService.parseDoubleSafely(String.valueOf(bill.getReserve_mhada_service_charge()));
+            double subcharge = billingCalculationService.parseDoubleSafely(String.valueOf(bill.getSub_charge()));
+            double buildingDevFund = billingCalculationService.parseDoubleSafely(String.valueOf(bill.getBuilding_dev_fund()));
+            double other = billingCalculationService.parseDoubleSafely(String.valueOf(bill.getOther()));
+
+            double arrears = billingCalculationService.parseDoubleSafely(formData.get("arrears"));
+            double creditBill = billingCalculationService.parseDoubleSafely(formData.get("credit_bill"));
+
+            double currentMonthTotal =
+                    maintenanceContribution +
+                            housingBoardContribution +
+                            propertyTaxContribution +
+                            sinkingFund +
+                            reserveMhadaServiceCharge +
+                            subcharge +
+                            buildingDevFund +
+                            other;
+
+            double amountDue = (currentMonthTotal + arrears) - creditBill;
+
             // Use the service to prepare and generate the HTML for the bill
             String htmlContent = prepareHtmlForPdf(sid, formData, model, currentMonthTotal, amountDue);
             if (htmlContent == null) {
@@ -330,17 +388,27 @@ public class BillController {
                 formData.put("building_dev_fund", String.valueOf(bill.getBuilding_dev_fund()));
                 formData.put("other", String.valueOf(bill.getOther()));
                 formData.put("due_date", String.valueOf(bill.getDue_date()));
+                double maintenanceContribution, subcharge, fine, other, buildingDevFund;
+                double housingBoardContribution;
+                double propertyTaxContribution;
+                double sinkingFund;
+                double reserveMhadaServiceCharge;
+                double creditBill;
+
+                double currentMonthTotal;
+
+                String due_date;
 
                 // Retrieve values from formData and convert to double for calculations
-                maintenanceContribution = parseDoubleSafely(formData.get("maintenance_contribution"));
-                housingBoardContribution = parseDoubleSafely(formData.get("housing_board_contribution"));
-                propertyTaxContribution = parseDoubleSafely(formData.get("property_tax_contribution"));
-                sinkingFund = parseDoubleSafely(formData.get("sinking_fund"));
-                reserveMhadaServiceCharge = parseDoubleSafely(formData.get("reserve_mhada_service_charge"));
-                subcharge = parseDoubleSafely(formData.get("sub_charge"));
-                fine = parseDoubleSafely(formData.get("fine"));
-                buildingDevFund = parseDoubleSafely(formData.get("building_dev_fund"));
-                other = parseDoubleSafely(formData.get("other"));
+                maintenanceContribution = billingCalculationService.parseDoubleSafely(formData.get("maintenance_contribution"));
+                housingBoardContribution = billingCalculationService.parseDoubleSafely(formData.get("housing_board_contribution"));
+                propertyTaxContribution = billingCalculationService.parseDoubleSafely(formData.get("property_tax_contribution"));
+                sinkingFund = billingCalculationService.parseDoubleSafely(formData.get("sinking_fund"));
+                reserveMhadaServiceCharge = billingCalculationService.parseDoubleSafely(formData.get("reserve_mhada_service_charge"));
+                subcharge = billingCalculationService.parseDoubleSafely(formData.get("sub_charge"));
+                fine = billingCalculationService.parseDoubleSafely(formData.get("fine"));
+                buildingDevFund = billingCalculationService.parseDoubleSafely(formData.get("building_dev_fund"));
+                other = billingCalculationService.parseDoubleSafely(formData.get("other"));
 
                 // Assuming arrears value is known or retrieved from somewhere else
                 double arrears = 0.0; // Set arrears value
@@ -385,7 +453,7 @@ public class BillController {
     public void downloadPdf(HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IOException {
         session = request.getSession();
         try {
-            Integer sid = (Integer) session.getAttribute("sid");
+            Integer sid = (Integer) session.getAttribute("adminSocietyId");
             String base64Pdf = (String) session.getAttribute("pdfBytes");
             if (base64Pdf == null) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND, "No PDF available for download");
@@ -448,16 +516,27 @@ public class BillController {
                 formData.put("due_date", "");
                 formData.put("credit_bill", "");
 
+                double maintenanceContribution, subcharge, fine, other, buildingDevFund;
+                double housingBoardContribution;
+                double propertyTaxContribution;
+                double sinkingFund;
+                double reserveMhadaServiceCharge;
+                double creditBill;
+
+                double currentMonthTotal;
+
+                String due_date;
+
                 // Retrieve values from formData and convert to double for calculations
-                maintenanceContribution = parseDoubleSafely(formData.get("maintenance_contribution"));
-                housingBoardContribution = parseDoubleSafely(formData.get("housing_board_contribution"));
-                propertyTaxContribution = parseDoubleSafely(formData.get("property_tax_contribution"));
-                sinkingFund = parseDoubleSafely(formData.get("sinking_fund"));
-                reserveMhadaServiceCharge = parseDoubleSafely(formData.get("reserve_mhada_service_charge"));
-                subcharge = parseDoubleSafely(formData.get("sub_charge"));
-                fine = parseDoubleSafely(formData.get("fine"));
-                buildingDevFund = parseDoubleSafely(formData.get("building_dev_fund"));
-                other = parseDoubleSafely(formData.get("other"));
+                maintenanceContribution = billingCalculationService.parseDoubleSafely(formData.get("maintenance_contribution"));
+                housingBoardContribution = billingCalculationService.parseDoubleSafely(formData.get("housing_board_contribution"));
+                propertyTaxContribution = billingCalculationService.parseDoubleSafely(formData.get("property_tax_contribution"));
+                sinkingFund = billingCalculationService.parseDoubleSafely(formData.get("sinking_fund"));
+                reserveMhadaServiceCharge = billingCalculationService.parseDoubleSafely(formData.get("reserve_mhada_service_charge"));
+                subcharge = billingCalculationService.parseDoubleSafely(formData.get("sub_charge"));
+                fine = billingCalculationService.parseDoubleSafely(formData.get("fine"));
+                buildingDevFund = billingCalculationService.parseDoubleSafely(formData.get("building_dev_fund"));
+                other = billingCalculationService.parseDoubleSafely(formData.get("other"));
 
                 // Assuming arrears value is known or retrieved from somewhere else
                 double arrears = 0.0; // Set arrears value
@@ -479,76 +558,6 @@ public class BillController {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public static String convertNumberToWords(int number) {
-        if (number == 0) {
-            return "Zero";
-        }
-
-        String[] units = {
-                "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
-                "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
-                "Seventeen", "Eighteen", "Nineteen"
-        };
-
-        String[] tens = {
-                "", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"
-        };
-
-        String[] thousands = {
-                "", "Thousand", "Million", "Billion"
-        };
-
-        String words = "";
-        int i = 0;
-
-        while (number > 0) {
-            if (number % 1000 != 0) {
-                words = convertHundreds(number % 1000, units, tens) + thousands[i] + " " + words;
-            }
-            number /= 1000;
-            i++;
-        }
-
-        return words.trim();
-    }
-
-    private static String convertHundreds(int number, String[] units, String[] tens) {
-        String words = "";
-
-        if (number >= 100) {
-            words += units[number / 100] + " Hundred ";
-            number %= 100;
-        }
-
-        if (number >= 20) {
-            words += tens[number / 10] + " ";
-            number %= 10;
-        }
-
-        if (number > 0) {
-            words += units[number] + " ";
-        }
-
-        return words;
-    }
-//    private double parseDoubleSafely(String value) {
-//        if (value == null || value.trim().isEmpty()) {
-//            return 0.0; // Default value if the field is empty
-//        }
-//        return Double.parseDouble(value);
-//    }
-
-    private double parseDoubleSafely(String value) {
-        try {
-            if (value == null || value.trim().isEmpty()) {
-                return 0.0;
-            }
-            return Double.parseDouble(value.trim());
-        } catch (NumberFormatException e) {
-            return 0.0;
         }
     }
 

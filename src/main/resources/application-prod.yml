@@ -6,14 +6,14 @@ spring:
     web-application-type: servlet
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/syntora
-    username: syntora_user
-    password: Vsengg_27
+    url: jdbc:postgresql://localhost:5432/society_management
+    username: postgres
+    password: pgadmin4
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
+#  jpa:
+#    hibernate:
+#      ddl-auto: update
+#    show-sql: false
 
 
 vaadin:

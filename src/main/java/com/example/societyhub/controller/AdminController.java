@@ -2,6 +2,7 @@ package com.example.societyhub.controller;
 
 import com.example.societyhub.service.DBHandler;
 import com.example.societyhub.model.Note;
+import com.example.societyhub.service.NoteService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
@@ -22,122 +23,54 @@ import java.util.Map;
 
 @Controller
 public class AdminController {
-    private static final Logger Log = LogManager.getLogger(ResidentController.class);
 
-    @Autowired
-    private DBHandler dbHandler;
+    private static final Logger log = LogManager.getLogger(AdminController.class);
 
-    @Autowired
-    private ThymeleafViewResolver thymeleafViewResolver;
+    private final NoteService noteService;
+
+    public AdminController(NoteService noteService) {
+        this.noteService = noteService;
+    }
+
     @GetMapping("/admin")
-    public String getAdminPage(Model model, HttpSession session, HttpServletRequest request) throws SQLException {
+    public String getAdminPage(Model model, HttpSession session, HttpServletRequest request) {
+
         Integer societyId = (Integer) session.getAttribute("adminSocietyId");
         String adminName = (String) session.getAttribute("adminName");
 
-        System.out.println("SocietyId: " + societyId);
-
-        try {
-            List<Note> noteItems = dbHandler.getNotes(societyId);
-            model.addAttribute("notes", noteItems);
-            System.out.println("Notes retrieved from DB:");
-            for (Note note : noteItems) {
-                System.out.println(note);
-            }
-        } catch (SQLException e) {
-            Log.error("Error fetching notes", e);
-            System.out.println("Error fetching notes");
-            model.addAttribute("notes", List.of()); // empty list fallback
+        if (societyId == null) {
+            log.warn("Session expired or invalid session while accessing /admin");
+            return "redirect:/login";
         }
 
-        // Add session attributes and the list of To-Do items to the model
+        log.info("Admin dashboard requested for societyId={}", societyId);
+
+        List<Note> notes = noteService.getNotes(societyId);
+
+        model.addAttribute("notes", notes);
         model.addAttribute("societyId", societyId);
         model.addAttribute("adminName", adminName);
-//        model.addAttribute("notes", noteItems);  // MISSING in your code
-//        model.addAttribute("role", "admin");
         model.addAttribute("newNote", new Note());
-        model.addAttribute("role", "admin"); // or dynamically fetched
+        model.addAttribute("role", "admin");
         model.addAttribute("requestURI", request.getRequestURI());
 
-//        System.out.println("Role: " + model.getAttribute("role"));
-
-        return "admin/admin";  // Resolves to `admin.html`
+        return "admin/admin";
     }
 
     @GetMapping("/upload")
     public String getUploadPage(Model model, HttpSession session) {
+
         Integer societyId = (Integer) session.getAttribute("adminSocietyId");
         String adminName = (String) session.getAttribute("adminName");
 
-        // Add session attributes to the model if needed
+        if (societyId == null) {
+            log.warn("Session expired while accessing /upload");
+            return "redirect:/login";
+        }
+
         model.addAttribute("societyId", societyId);
         model.addAttribute("adminName", adminName);
-        return "upload";  // This will resolve to `admin.html` in `src/main/resources/templates/`
-    }
 
-    @PostMapping("/admin/add_note")
-    @ResponseBody
-    public Map<String, Object> addNote(@RequestBody Map<String, String> formData, HttpSession session) {
-        Integer sid = (Integer) session.getAttribute("adminSocietyId");
-        Map<String, Object> response = new HashMap<>();
-        try {
-            String title = formData.get("title");
-            String message = formData.get("message");
-
-            // Call DB insert function
-            dbHandler.addNote(title, message, sid);  // <-- you need this
-
-            System.out.println("Note added");
-
-            response.put("success", true);
-            response.put("message", "Note added successfully!");
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("error", "Error adding note: " + e.getMessage());
-        }
-        return response;
-    }
-
-
-    @PostMapping("/admin/delete_note")
-    @ResponseBody
-    public String deleteNote(@RequestBody Map<String, String> request) {
-        String title = request.get("title");
-        String sidString = request.get("sid");
-
-        if (sidString == null || title == null) {
-            return "Invalid request: sid or title missing.";
-        }
-
-        try {
-            int sid = Integer.parseInt(sidString);
-            dbHandler.deleteNote(sid, title);
-            System.out.println("Note deleted: " + title);
-            return "success";
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "error";
-        }
-    }
-
-    @PostMapping("/admin/delete_announcement")
-    @ResponseBody
-    public String deleteAnnouncement(@RequestBody Map<String, String> request) {
-        String title = request.get("title");
-        String sidString = request.get("sid");
-
-        if (sidString == null || title == null) {
-            return "Invalid request: sid or title missing.";
-        }
-
-        try {
-            int sid = Integer.parseInt(sidString);
-            dbHandler.deleteAnnouncement(sid, title);
-            System.out.println("Announcement deleted: " + title);
-            return "success";
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "error";
-        }
+        return "upload";
     }
 }
-

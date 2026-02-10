@@ -2,12 +2,11 @@ package com.example.societyhub.controller;
 
 import com.example.societyhub.model.Announcement;
 import com.example.societyhub.service.DBHandler;
-import com.example.societyhub.service.EmailService;
+import com.example.societyhub.service.EmailOrchestrationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -21,129 +20,176 @@ import java.util.Map;
 @Controller
 @RequestMapping("/api")
 public class EmailController {
-    private static final Logger Log = LogManager.getLogger(EmailController.class);
 
-    @Autowired
-    private DBHandler dbHandler;
+    private static final Logger log = LogManager.getLogger(EmailController.class);
 
-    @Autowired
-    private EmailService emailService;
+    private final DBHandler dbHandler;
+    private final EmailOrchestrationService orchestrationService;
+
+    public EmailController(DBHandler dbHandler,
+                           EmailOrchestrationService orchestrationService) {
+        this.dbHandler = dbHandler;
+        this.orchestrationService = orchestrationService;
+    }
+
+    /* ================= VIEW PAGE ================= */
 
     @GetMapping("/notify_resident")
-    public String handleResidentData(Model model, HttpSession session, HttpServletRequest request) {
+    public String handleResidentData(Model model,
+                                     HttpSession session,
+                                     HttpServletRequest request) {
+
         Integer sid = (Integer) session.getAttribute("adminSocietyId");
 
         if (sid == null) {
             model.addAttribute("error", "Admin society ID not found");
-            return "error"; // Redirect to an error page or handle accordingly
+            return "error";
         }
 
         try {
-            List<Announcement> announcements = dbHandler.getAnnouncement(sid);
+            List<Announcement> announcements =
+                    dbHandler.getAnnouncement(sid);
+
             model.addAttribute("announcements", announcements);
-            System.out.println("Announcements retrieved from DB:");
-            for (Announcement announcement : announcements) {
-                System.out.println(announcement);
-            }
+
         } catch (SQLException e) {
-            Log.error("Error fetching announcements", e);
-            System.out.println("Error fetching announcements");
-            model.addAttribute("announcements", List.of()); // empty list fallback
+            log.error("Error fetching announcements", e);
+            model.addAttribute("announcements", List.of());
         }
 
-        model.addAttribute("role", "admin"); // or dynamically fetched
+        model.addAttribute("role", "admin");
         model.addAttribute("requestURI", request.getRequestURI());
 
-        return "admin/notify_resident"; // Thymeleaf template for the details
+        return "admin/notify_resident";
     }
+
+    /* ================= SINGLE RECEIPT ================= */
 
     @PostMapping("/emailBill")
-    public ResponseEntity<Map<String, String>> emailBill(@RequestBody Map<String, String> requestBody, HttpSession session, Model model) {
-        Integer sid = (Integer) session.getAttribute("adminSocietyId");
+    public ResponseEntity<Map<String, String>> emailBill(
+            @RequestBody Map<String, String> requestBody,
+            HttpSession session) {
+
+        Integer sid =
+                (Integer) session.getAttribute("adminSocietyId");
+
         if (sid == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Session ID not found."));
-        }
-
-        String mygateNo = requestBody.get("mygate_no");
-        String month = requestBody.get("selectedMonth");
-        String status = requestBody.get("status");
-        String email = requestBody.get("email");
-
-        try {
-            System.out.println("Email Bill : " + mygateNo + " " + month + " " + status + " " + email);
-            emailService.generateBill(mygateNo, month, status, email, session, model, sid);
-
-            // ✅ Return a JSON response instead of plain text
-            return ResponseEntity.ok(Map.of("message", "Bill emailed successfully."));
-        } catch (SQLException e) {
-            Log.error("Error during email sending", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Failed to send emails."));
-        }
-    }
-
-
-
-    @PostMapping("/sendBill") // Change this to @PostMapping to handle form submission
-    public String sendBill(HttpSession session, Model model) {
-        Integer sid = (Integer) session.getAttribute("adminSocietyId");
-        if (sid == null) {
-            model.addAttribute("error", "Session ID not found.");
-            return "notify_resident"; // Return to the same Thymeleaf template
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Session ID not found."));
         }
 
         try {
-            // Generate and send email with the bill as PDF
-            emailService.generatePdf(session, model, sid);
-            model.addAttribute("message", "Emails sent successfully✅");
-        } catch (SQLException e) {
-            Log.error("Error during email sending", e);
-            model.addAttribute("error", "Failed to send emails.");
-        }
 
-        return "admin/notify_resident"; // Return to the same Thymeleaf template
-    }
-    @PostMapping("/sendMyGate") // Change this to @PostMapping to handle form submission
-    public String emailMyGate(HttpSession session, Model model) {
-        Integer sid = (Integer) session.getAttribute("adminSocietyId");
-        if (sid == null) {
-            model.addAttribute("error", "Session ID not found.");
-            return "admin/notify_resident"; // Return to the same Thymeleaf template
-        }
+            orchestrationService.sendReceipt(
+                    requestBody.get("mygate_no"),
+                    requestBody.get("selectedMonth"),
+                    requestBody.get("status"),
+                    sid
+            );
 
-        try {
-            // Generate and send email with the bill as PDF
-            emailService.sendMyGate(session, model, sid);
-            model.addAttribute("message", "Emails sent successfully✅");
-        } catch (SQLException e) {
-            Log.error("Error during email sending", e);
-            model.addAttribute("error", "Failed to send emails.");
-        }
+            return ResponseEntity.ok(
+                    Map.of("message", "Receipt emailed successfully.")
+            );
 
-        return "admin/notify_resident"; // Return to the same Thymeleaf template
-    }
-
-    @PostMapping("/sendNotice") // Change this to @PostMapping to handle form submission
-    public String emailNotice(@RequestParam("title") String title,
-                              @RequestParam("category") String category,
-                              @RequestParam("customMessage") String message, HttpSession session, Model model) {
-        Integer sid = (Integer) session.getAttribute("adminSocietyId");
-        if (sid == null) {
-            model.addAttribute("error", "Session ID not found.");
-            return "admin/notify_resident"; // Return to the same Thymeleaf template
-        }
-
-        try {
-            // Generate and send email with the bill as PDF
-            dbHandler.addAnnouncement(title, message, category, sid);
-//            emailService.sendNotice(message,session, model, sid);
-            model.addAttribute("message", "Emails sent successfully✅");
-        } catch (SQLException e) {
-            Log.error("Error during email sending", e);
-            model.addAttribute("error", "Failed to send emails.");
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            log.error("Receipt email failed", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to send receipt."));
+        }
+    }
+
+    /* ================= MONTHLY BILL ================= */
+
+    @PostMapping("/sendBill")
+    public String sendMonthlyBills(HttpSession session,
+                                   Model model) {
+
+        Integer sid =
+                (Integer) session.getAttribute("adminSocietyId");
+
+        if (sid == null) {
+            model.addAttribute("error", "Session ID not found.");
+            return "admin/notify_resident";
         }
 
-        return "admin/notify_resident"; // Return to the same Thymeleaf template
+        try {
+
+            orchestrationService.sendMonthlyBills(sid);
+
+            model.addAttribute("message",
+                    "Monthly bills sent successfully ✅");
+
+        } catch (Exception e) {
+            log.error("Monthly bill sending failed", e);
+            model.addAttribute("error",
+                    "Failed to send monthly bills.");
+        }
+
+        return "admin/notify_resident";
+    }
+
+    /* ================= MYGATE ================= */
+
+    @PostMapping("/sendMyGate")
+    public String sendMyGate(HttpSession session,
+                             Model model) {
+
+        Integer sid =
+                (Integer) session.getAttribute("adminSocietyId");
+
+        if (sid == null) {
+            model.addAttribute("error", "Session ID not found.");
+            return "admin/notify_resident";
+        }
+
+        try {
+
+            orchestrationService.sendMyGateNumbers(sid);
+
+            model.addAttribute("message",
+                    "MyGate numbers sent successfully ✅");
+
+        } catch (Exception e) {
+            log.error("MyGate sending failed", e);
+            model.addAttribute("error",
+                    "Failed to send MyGate numbers.");
+        }
+
+        return "admin/notify_resident";
+    }
+
+    /* ================= NOTICE ================= */
+
+    @PostMapping("/sendNotice")
+    public String sendNotice(@RequestParam("title") String title,
+                             @RequestParam("category") String category,
+                             @RequestParam("customMessage") String message,
+                             HttpSession session,
+                             Model model) {
+
+        Integer sid =
+                (Integer) session.getAttribute("adminSocietyId");
+
+        if (sid == null) {
+            model.addAttribute("error", "Session ID not found.");
+            return "admin/notify_resident";
+        }
+
+        try {
+
+            dbHandler.addAnnouncement(title, message, category, sid);
+
+            orchestrationService.sendNotice(message, sid);
+
+            model.addAttribute("message",
+                    "Notice sent successfully ✅");
+
+        } catch (Exception e) {
+            log.error("Notice sending failed", e);
+            model.addAttribute("error",
+                    "Failed to send notice.");
+        }
+
+        return "admin/notify_resident";
     }
 }

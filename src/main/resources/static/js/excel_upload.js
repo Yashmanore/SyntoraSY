@@ -47,7 +47,7 @@ fileInput.addEventListener('change', () => {
         console.log(`hello ${key}: ${value}`);
      }
 
-    fetch('http://localhost:5000/api/upload', {
+    fetch('/api/upload', {
         method: 'POST',
         body: formData,
 //        headers: {
