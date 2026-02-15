@@ -175,13 +175,19 @@
 <div class="main-content">
 
     <div class="note-section">
-        <strong>Important:</strong>
-        Paid residents are shown in <span class="text-success">green</span>,
-        unpaid in <span class="text-danger">red</span>.
+<!--        <strong>Important:</strong>-->
+<!--        Paid residents are shown in <span class="text-success">green</span>,-->
+<!--        unpaid in <span class="text-danger">red</span>.-->
     </div>
 
     <h2 th:text="${society_name}">Society Name</h2>
     <p id="current-year"></p>
+
+    <p class="current-month">
+        Currently Viewing:
+        <strong th:text="${selectedMonth}">Month</strong>
+    </p>
+
 
     <script>
         document.getElementById("current-year").textContent =
@@ -256,9 +262,11 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
 
 
-<script>
+<script th:inline="javascript">
     // Declare selectedMonth globally
-    let selectedMonth = new Date().toLocaleString('default', { month: 'long' });
+    let selectedMonth = [[${selectedMonth}]];
+    console.log("Selected month from Thymeleaf:", selectedMonth);
+
 
     function toggleEdit(button) {
         const row = button.closest('tr'); // Get the row of the clicked button
@@ -389,31 +397,6 @@
         });
     });
 
-</script>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-
-        // Get current month name (January, February, etc.)
-        const currentMonth = new Date().toLocaleString('default', { month: 'long' });
-
-        const tabs = document.querySelectorAll(".tab");
-
-        // Highlight current month on page load
-        tabs.forEach(tab => {
-            if (tab.dataset.month === currentMonth) {
-                tab.classList.add("active");
-            }
-        });
-
-        // Handle click highlight
-        tabs.forEach(tab => {
-            tab.addEventListener("click", function () {
-                tabs.forEach(t => t.classList.remove("active"));
-                this.classList.add("active");
-            });
-        });
-
-    });
 </script>
 
 <!--<div th:replace="fragments/footer :: footer"></div>-->

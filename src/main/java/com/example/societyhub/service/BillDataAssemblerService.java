@@ -44,11 +44,51 @@ public class BillDataAssemblerService {
         data.put("room_no", String.valueOf(resident.getRoom_no()));
         data.put("mygateNo", resident.getMygate_no());
         data.put("society_name", society.getName());
+        data.put("maintenance_contribution",
+                String.valueOf(bill.getMaintenance_contribution()));
+
+        data.put("housing_board_contribution",
+                String.valueOf(bill.getHousing_board_contribution()));
+
+        data.put("property_tax_contribution",
+                String.valueOf(bill.getProperty_tax_contribution()));
+
+        data.put("sinking_fund",
+                String.valueOf(bill.getSinking_fund()));
+
+        data.put("reserve_mhada_service_charge",
+                String.valueOf(bill.getReserve_mhada_service_charge()));
+
+        data.put("sub_charge",
+                String.valueOf(bill.getSub_charge()));
+
+        data.put("building_dev_fund",
+                String.valueOf(bill.getBuilding_dev_fund()));
+
+        data.put("other",
+                String.valueOf(bill.getOther()));
+
+        data.put("fine",
+                String.valueOf(calc.get("fineAmount")));
+
+        data.put("due_date", bill.getDue_date());
+
         data.put("month", month);
         data.put("status", status.replace("_", " "));
         data.put("current_month_total", calc.get("total").toString());
+        double total = (double) calc.get("total");
+
+        data.put("amount_due_in_words",
+                BillingCalculationService.convertNumberToWords((int) total));
+
         data.put("bill_date", LocalDate.now().toString());
         data.put("bill_no", dbHandler.getNextBillNumber().toString());
+        data.put("street", society.getStreet());
+        data.put("landmark", society.getLandmark());
+        data.put("locality", society.getLocality());
+        data.put("city", society.getCity());
+        data.put("pincode", society.getPincode());
+
 
         return data;
     }

@@ -429,14 +429,15 @@ public class DBHandler {
         }
     }
 
-    public void updateResidentBill(String mygateNo, String month, int statusValue) throws SQLException {
+    public void updateResidentBill(String mygateNo, int year, String month, int statusValue) throws SQLException {
         // Map the month to the corresponding column name
         String columnName = month.toLowerCase(); // Ensure the month matches the column naming convention
         System.out.println("Status value: " + statusValue);
         System.out.println("Mygate value: " + mygateNo);
         System.out.println("Month value: " + columnName);
+        System.out.println("Year: " + year);
 
-        String sql = "update resident_bill set " + columnName + " = ? where mygate_no = ?";
+        String sql = "update resident_bill set " + columnName + " = ? where mygate_no = ? and year = ?";
 
         try (Connection connection = dataSource.getConnection(); // Implement your database connection method
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -444,9 +445,11 @@ public class DBHandler {
 
             statement.setInt(1, statusValue);
             statement.setString(2, mygateNo);
+            statement.setInt(3, year);
 
             // Execute the update query
-            statement.executeUpdate();
+            int rows = statement.executeUpdate();
+            System.out.println("Rows updated: " + rows);
 
             connection.commit();
         } catch (Exception e) {

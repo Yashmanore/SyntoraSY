@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class HomeController {
 
     @GetMapping("/")
-    public String languagePage() {
-        return "language";
+    public String defaultPage() {
+        return "home";
     }
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -245,6 +246,9 @@ public class ResidentController {
                 month = "January"; // Default month
             }
 
+            model.addAttribute("selectedMonth",
+                    month.substring(0,1).toUpperCase() + month.substring(1).toLowerCase());
+
 //            System.out.println("Selected Month: " + month); // Print selected month
 
             Society society = dbHandler.getSocietyBySid(sid);
@@ -337,7 +341,8 @@ public class ResidentController {
 
 //            boolean statusValue = "Paid".equalsIgnoreCase(resident.getStatus()) || "Paid_with_fine".equalsIgnoreCase(resident.getStatus());
             String selectedMonth = resident.getMonth();
-            dbHandler.updateResidentBill(resident.getMygate_no(), selectedMonth, flag);
+            int currentYear = LocalDate.now().getYear();
+            dbHandler.updateResidentBill(resident.getMygate_no(), currentYear, selectedMonth, flag);
 
             response.put("success", true);
             response.put("message", "Resident status updated successfully!");
