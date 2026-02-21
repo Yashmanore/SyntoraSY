@@ -78,6 +78,8 @@ public class BillDataAssemblerService {
         data.put("current_month_total", calc.get("total").toString());
         double total = (double) calc.get("total");
 
+        System.out.println("Total: " + total);
+
         data.put("amount_due_in_words",
                 BillingCalculationService.convertNumberToWords((int) total));
 

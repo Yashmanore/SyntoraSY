@@ -56,4 +56,16 @@ public class MyGateService {
             return rs.getInt(1) > 0;
         }
     }
+
+    public boolean existsInDatabase(String number) throws Exception {
+
+        if (number == null) return false;
+
+        number = number.trim();
+
+        try (Connection conn = dataSource.getConnection()) {
+            return existsInDatabase(conn, number);
+        }
+    }
+
 }

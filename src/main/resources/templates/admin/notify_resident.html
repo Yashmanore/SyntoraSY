@@ -311,6 +311,94 @@
 
     </div>
 
+    <hr class="my-5">
+
+    <h5 class="fw-semibold mb-3">
+        Resident Complaints
+    </h5>
+
+    <div class="list-group">
+
+        <div class="list-group-item mb-3 shadow-sm"
+             th:each="complaint : ${complaints}">
+
+            <div class="d-flex justify-content-between align-items-start">
+
+                <!-- Complaint Details -->
+                <div>
+
+                    <h6 class="fw-bold mb-1">
+                        <span th:text="${complaint.subject}"></span>
+                    </h6>
+
+                    <div class="small text-muted mb-2">
+                        <strong>Name:</strong>
+                        <span th:text="${complaint.residentName}"></span>
+                        |
+                        <strong>Flat:</strong>
+                        <span th:text="${complaint.flatNo}"></span>
+                        |
+                        <strong>Submitted:</strong>
+                        <span th:text="${#temporals.format(complaint.createdAt, 'dd MMM yyyy HH:mm')}"></span>
+                    </div>
+
+                    <p class="mb-2 text-muted"
+                       th:text="${complaint.description}">
+                    </p>
+
+                    <!-- Status Badge -->
+                    <span class="badge"
+                          th:classappend="${complaint.status == 'RESOLVED'} ? 'bg-success' : 'bg-warning text-dark'"
+                          th:text="${complaint.status}">
+                </span>
+
+                </div>
+
+                <!-- Actions -->
+                <div class="ms-3 d-flex flex-column gap-2">
+
+                    <!-- Mark Resolved -->
+                    <form th:action="@{/admin/complaints/resolve}"
+                          method="post"
+                          th:if="${complaint.status != 'RESOLVED'}">
+
+                        <input type="hidden"
+                               name="id"
+                               th:value="${complaint.id}"/>
+
+                        <button class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Mark Resolved
+                        </button>
+                    </form>
+
+                    <!-- Delete -->
+                    <form th:action="@{/admin/complaints/delete}"
+                          method="post">
+
+                        <input type="hidden"
+                               name="id"
+                               th:value="${complaint.id}"/>
+
+                        <button class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Delete this complaint?')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div th:if="${#lists.isEmpty(complaints)}"
+             class="text-muted small">
+            No complaints submitted yet.
+        </div>
+
+    </div>
+
     <!-- Progress -->
     <div class="progress mt-4" id="progress">
         <div class="progress-bar progress-bar-striped progress-bar-animated w-100"></div>

@@ -3,10 +3,8 @@ package com.example.societyhub.controller;
 import com.example.societyhub.model.Admin;
 import com.example.societyhub.model.Resident;
 import com.example.societyhub.model.WebAdmin;
-import com.example.societyhub.service.DBHandler;
-import com.example.societyhub.service.EmailOrchestrationService;
-import com.example.societyhub.service.MailService;
-import com.example.societyhub.service.PasswordService;
+import com.example.societyhub.service.*;
+import com.github.javaparser.utils.Log;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,13 +25,15 @@ public class AuthController {
     private final DBHandler dbHandler;
     private final MailService mailService;
     private final PasswordService passwordService;
+    private final MyGateService myGateService;
 
     public AuthController(DBHandler dbHandler,
                           EmailOrchestrationService emailService, MailService mailService,
-                          PasswordService passwordService) {
+                          PasswordService passwordService, MyGateService myGateService) {
         this.dbHandler = dbHandler;
         this.mailService = mailService;
         this.passwordService = passwordService;
+        this.myGateService = myGateService;
     }
 
     // ================= REGISTER ADMIN =================
@@ -236,4 +236,83 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("status", "error", "message", "Invalid OTP."));
     }
+
+    @PostMapping("/validate-mygate_no")
+    public ResponseEntity<Map<String, Object>> validateMyGate(@RequestBody Map<String, String> request) {
+        String mygate_no = request.get("mygate_no");
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            System.out.println("Received MyGate number: " + mygate_no);
+
+            // Validate MyGate number from the database
+            boolean residentExists = myGateService.existsInDatabase(mygate_no);
+            System.out.println("Does MyGate number exist in database? " + residentExists);
+
+            if (residentExists) {
+                // If valid, respond with a success message
+                response.put("status", "ok");
+                response.put("message", "MyGate number validated.");
+                return ResponseEntity.ok(response);
+            } else {
+                // MyGate number not found
+                response.put("status", "error");
+                response.put("message", "Invalid MyGate number.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "An error occurred during validation.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+
+    @PostMapping("/create-password")
+    public ResponseEntity<Map<String, Object>> createPassword(@RequestBody Map<String, String> request, HttpSession session) {
+        System.out.println("createPassword method called");
+        Map<String, Object> response = new HashMap<>();
+
+        String mygate_no = request.get("mygate_no");
+        System.out.println("mygate:" + mygate_no);
+        String password = request.get("password");
+        System.out.println("Password:" + password);
+        String comPassword = request.get("comPassword"); // Change from "confirmPassword" to "comPassword"
+
+        System.out.println("Password is been created: " + comPassword);
+
+        try {
+            // Ensure the passwords match
+            if (!password.equals(comPassword)) {
+                response.put("status", "error");
+                response.put("message", "Passwords do not match.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+
+            // Hash the password
+            String hashedPassword = passwordService.encode(password);
+            System.out.println("Hashed password: " + hashedPassword);
+
+            // Update password in the database
+            boolean updateSuccess = dbHandler.updateResidentPassword(mygate_no, hashedPassword);
+
+            if (updateSuccess) {
+                response.put("status", "ok");
+                response.put("message", "Password created successfully.");
+                session.setAttribute("residentMygate", mygate_no);
+                Log.info("Password set successfully for MyGate No: " + mygate_no);
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("status", "error");
+                response.put("message", "Failed to update password. Resident not found.");
+                Log.error("Failed to create password for MyGate No: " + mygate_no);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "An error occurred while creating password.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
 }

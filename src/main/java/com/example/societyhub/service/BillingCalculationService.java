@@ -11,7 +11,7 @@ public class BillingCalculationService {
 
     public Map<String, Object> calculate(Bill bill, String status) {
 
-        double total =
+        double baseTotal =
                 bill.getMaintenance_contribution()
                         + bill.getHousing_board_contribution()
                         + bill.getProperty_tax_contribution()
@@ -21,16 +21,28 @@ public class BillingCalculationService {
                         + bill.getOther()
                         + bill.getBuilding_dev_fund();
 
-        double fineAmount = 0;
+        double fineAmount = bill.getFine();
 
-        if ("Paid_with_fine".equals(status)) {
-            fineAmount = (bill.getFine() / 100.0) * total;
-            total += fineAmount;
+        String normalized =
+                status == null ? "" :
+                        status.trim()
+                                .toLowerCase()
+                                .replace(" ", "_");
+
+        double finalTotal = baseTotal;
+        double finalFine = 0.0;
+
+        if (normalized.equals("paid_with_fine")) {
+            finalTotal += fineAmount;
+            finalFine = fineAmount;
         }
 
+        // If status is only "paid" or anything else,
+        // fine remains 0 and total remains baseTotal
+
         Map<String, Object> result = new HashMap<>();
-        result.put("total", total);
-        result.put("fineAmount", fineAmount);
+        result.put("total", finalTotal);
+        result.put("fineAmount", finalFine);
 
         return result;
     }

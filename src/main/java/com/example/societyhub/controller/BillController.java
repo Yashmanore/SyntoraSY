@@ -133,7 +133,7 @@ public class BillController {
         model.addAttribute("maintenanceContribution", maintenanceContribution);
         model.addAttribute("sub_charge", formData.get("sub_charge"));
         model.addAttribute("housing_board_contribution", housingBoardContribution);
-        model.addAttribute("fine", 0);
+        model.addAttribute("fine", fine);
         model.addAttribute("property_tax_contribution", propertyTaxContribution);
         model.addAttribute("building_dev_fund", buildingDevFund);
         model.addAttribute("sinking_fund", sinkingFund);
@@ -155,7 +155,7 @@ public class BillController {
         bill.setSinking_fund((int) sinkingFund);
         bill.setReserve_mhada_service_charge((int) reserveMhadaServiceCharge);
         bill.setSub_charge((int) subcharge);
-        bill.setFine(0);
+        bill.setFine((int) fine);
         bill.setBuilding_dev_fund((int) buildingDevFund);
         bill.setOther((int) other);
         bill.setDue_date(formData.get("due_date"));
@@ -168,20 +168,20 @@ public class BillController {
 
 
     @PostMapping("/bill/modify")
-    public String modifyBill(@ModelAttribute("formData") Map<String, String> formData, Model model, HttpSession session) {
-//        Integer sid = (Integer) session.getAttribute("sid");
-        Integer sid = (Integer) session.getAttribute("adminSocietyId");
+    public String modifyBill(HttpSession session, Model model) {
 
-        if (sid == null) {
-            return "error"; // Redirect to an error page or handle accordingly
+        Map<String, String> formData =
+                (Map<String, String>) session.getAttribute("formData");
+
+        if (formData == null) {
+            return "error";
         }
 
-        // Add session data to the model if needed
-//        model.addAttribute("userName", userName);
-        model.addAttribute("adminSocietyId", sid);
-        model.addAllAttributes(formData);
-        return "admin/bill_form"; // Return to the form with pre-filled values
+        model.addAttribute("formData", formData);
+
+        return "admin/bill_form";
     }
+
 
 
     public String prepareHtmlForPdf(Integer sid, Map<String, String> formData, Model model, double currentMonthTotal, double amountDue) throws Exception {

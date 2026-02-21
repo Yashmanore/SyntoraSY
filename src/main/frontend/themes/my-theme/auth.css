@@ -210,14 +210,23 @@ h2 {
     width: 100vh;
     max-width: 500px;
 }
-
+.password-field-admin {
+    position: relative;
+    width: 100vh;
+    max-width: 300px;
+}
 .password-field input {
     width: 100vh;
     max-width: 500px;
     padding-right: 45px;
     box-sizing: border-box;
 }
-
+.password-field-admin input {
+    width: 100vh;
+    max-width: 300px;
+    padding-right: 45px;
+    box-sizing: border-box;
+}
 .toggle-password {
     position: absolute;
     right: 12px;

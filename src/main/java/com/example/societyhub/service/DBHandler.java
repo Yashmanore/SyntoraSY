@@ -972,4 +972,95 @@ public class DBHandler {
             System.out.println("Rows affected: " + rowsAffected);
         }
     }
+
+    public List<Complaint> getComplaintsBySociety(Integer sid) {
+
+        List<Complaint> complaints = new ArrayList<>();
+
+        String sql = "SELECT * FROM complaint WHERE society_id = ? ORDER BY created_at DESC";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, sid);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Complaint complaint = new Complaint();
+
+                complaint.setId(rs.getLong("id"));
+                complaint.setResidentName(rs.getString("resident_name"));
+                complaint.setFlatNo(rs.getString("flat_no"));
+                complaint.setSubject(rs.getString("subject"));
+                complaint.setDescription(rs.getString("description"));
+                complaint.setStatus(rs.getString("status"));
+                complaint.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+
+                complaints.add(complaint);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return complaints;
+    }
+
+    public void markComplaintResolved(Long id) {
+
+        String sql = "UPDATE complaint SET status = 'RESOLVED' WHERE id = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteComplaint(Long id) {
+
+        String sql = "DELETE FROM complaint WHERE id = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void saveComplaint(Complaint complaint) {
+
+        String sql = """
+            INSERT INTO complaint
+            (society_id, resident_name, flat_no, subject, description, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """;
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, complaint.getSocietyId());
+            ps.setString(2, complaint.getResidentName());
+            ps.setString(3, complaint.getFlatNo());
+            ps.setString(4, complaint.getSubject());
+            ps.setString(5, complaint.getDescription());
+            ps.setString(6, complaint.getStatus());
+            ps.setTimestamp(7, Timestamp.valueOf(complaint.getCreatedAt()));
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

@@ -277,7 +277,7 @@ export function Login() {
                                                 className="toggle-password"
                                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                             >
-                                                {showConfirmPassword ? "🙈" : "👁"}
+                                                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                                             </span>
                                         </div>
                                         <button type="submit" title="Submit">

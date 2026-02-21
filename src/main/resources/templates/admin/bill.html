@@ -2,231 +2,171 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="#{bill.title}">Housing Society Bill</title>
+    <title>Housing Society Bill</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap" rel="stylesheet">
+
+    <!-- Include sidebar CSS -->
+    <th:block th:replace="fragments/sidebar :: sidebar-css"></th:block>
+
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 20px;
+            background-color: #f4f6f9;
+        }
+
+        .content-wrapper {
+            margin-left: 240px; /* same as sidebar width */
+            padding: 40px;
         }
 
         .bill-container {
-            width: 800px;
-            margin: 20px auto;
-            background-color: #ffffff;
-            padding: 30px;
+            max-width: 950px;
+            margin: 0 auto;
+            background: white;
+            padding: 35px;
             border-radius: 15px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        }
-
-        .bill-header {
-            text-align: center;
-            margin-bottom: 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
         }
 
         .bill-header h1 {
-            margin: 0;
-            font-size: 28px;
-            color: #2196F3; /* Blue color */
+            color: #2196F3;
+            font-weight: 600;
         }
 
-        .bill-header p {
-            margin: 5px 0;
-            font-size: 16px;
-            color: #555;
+        .table th {
+            background-color: #f8f9fa;
         }
 
-        .bill-details, .footer-section {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-
-        .bill-details th, .bill-details td,
-        .footer-section th, .footer-section td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
-
-        .bill-details th, .footer-section th {
-            background-color: #f7f7f7;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .footer-section td {
-            text-align: right;
-        }
-
-        .bill-summary td, .bill-summary th {
-            background-color: #f9f9f9;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .amount {
-            text-align: left;
-            color: #333;
-        }
-
-        .button-container {
-            text-align: center;
-            margin-top: 40px;
-        }
-
-        .form-inline {
-            display: inline-block;
-            margin: 0 15px;
-        }
-
-        button {
-            padding: 15px 30px;
-            background-color: #2196F3; /* Blue color for buttons */
-            color: white;
+        .btn-warning {
+            background-color: #f4b400;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
         }
 
-        button:hover {
-            background-color: #1976D2; /* Darker blue on hover */
+        .btn-primary {
+            background-color: #1a73e8;
+            border: none;
         }
-
-        .bill-footer {
-            margin-top: 30px;
-            font-size: 14px;
-            color: #777;
-            text-align: center;
-        }
-
-        .bill-footer p {
-            margin: 0;
-        }
-
     </style>
 </head>
+
 <body>
 
-<div class="bill-container"
-     style="position: fixed; left: 200px; right: 0; top: 0; bottom: 0; padding: 20px; overflow-y: auto;">
+<!-- Sidebar -->
+<th:block th:replace="fragments/sidebar :: sidebar('admin')"></th:block>
 
-    <div class="bill-header text-center mb-4">
-        <h1>Housing Society Bill</h1>
-        <h4 th:text="${society_name}">Society Name</h4>
+<!-- Main Content -->
+<div class="content-wrapper">
+
+    <div class="bill-container">
+
+        <div class="text-center mb-4">
+            <h1>Housing Society Bill</h1>
+            <h5 th:text="${society_name}">Society Name</h5>
+        </div>
+
+        <table class="table table-bordered">
+            <thead>
+            <tr>
+                <th>SR NO</th>
+                <th>DETAILS</th>
+                <th>AMOUNT</th>
+                <th>SR NO</th>
+                <th>DETAILS</th>
+                <th>AMOUNT</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>1</td>
+                <td>Maintenance Contribution</td>
+                <td th:text="${formData['maintenance_contribution']}"></td>
+
+                <td>6</td>
+                <td>Sub Charge</td>
+                <td th:text="${formData['sub_charge']}"></td>
+            </tr>
+
+            <tr>
+                <td>2</td>
+                <td>Housing Board Contribution</td>
+                <td th:text="${formData['housing_board_contribution']}"></td>
+
+                <td>7</td>
+                <td>Fine</td>
+                <td th:text="${formData['fine']}"></td>
+            </tr>
+
+            <tr>
+                <td>3</td>
+                <td>Property Tax Contribution</td>
+                <td th:text="${formData['property_tax_contribution']}"></td>
+
+                <td>8</td>
+                <td>Building Dev Fund</td>
+                <td th:text="${formData['building_dev_fund']}"></td>
+            </tr>
+
+            <tr>
+                <td>4</td>
+                <td>Sinking Fund</td>
+                <td th:text="${formData['sinking_fund']}"></td>
+
+                <td>9</td>
+                <td>Other</td>
+                <td th:text="${formData['other']}"></td>
+            </tr>
+
+            <tr>
+                <td>5</td>
+                <td>Due Date</td>
+                <td th:text="${formData['due_date']}"></td>
+
+                <td>10</td>
+                <td>Reserve Mhada Service Charge</td>
+                <td th:text="${formData['reserve_mhada_service_charge']}"></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <table class="table table-bordered">
+            <tr>
+                <th>Bill For</th>
+                <td th:text="${formData['bill_for']}"></td>
+
+                <th>Current Month Total</th>
+                <td th:text="${current_month_total}"></td>
+            </tr>
+
+            <tr>
+                <th>Rupees</th>
+                <td th:text="${amount_due_in_words}"></td>
+
+                <th>Arrears</th>
+                <td th:text="${formData['arrears']}"></td>
+            </tr>
+
+            <tr>
+                <th>Building Fund Dues</th>
+                <td th:text="${formData['bldg_fund_due']}"></td>
+
+                <th>Amount Due</th>
+                <td th:text="${amount_due}"></td>
+            </tr>
+        </table>
+
+        <div class="text-center mt-4">
+            <form th:action="@{/api/bill/modify}" method="post" class="d-inline">
+                <button class="btn btn-warning me-2">Modify Bill</button>
+            </form>
+
+            <form th:action="@{/api/preview-pdf}" method="get" target="_blank" class="d-inline">
+                <button class="btn btn-primary">Generate Bill</button>
+            </form>
+        </div>
+
     </div>
-
-    <table class="table table-bordered">
-        <thead>
-        <tr>
-            <th>SR NO</th>
-            <th>DETAILS</th>
-            <th>AMOUNT</th>
-            <th>SR NO</th>
-            <th>DETAILS</th>
-            <th>AMOUNT</th>
-        </tr>
-        </thead>
-
-        <tbody>
-        <tr>
-            <td>1</td>
-            <td>Maintenance Contribution</td>
-            <td th:text="${formData['maintenance_contribution']}"></td>
-
-            <td>6</td>
-            <td>Sub Charge</td>
-            <td th:text="${formData['sub_charge']}"></td>
-        </tr>
-
-        <tr>
-            <td>2</td>
-            <td>Housing Board Contribution</td>
-            <td th:text="${formData['housing_board_contribution']}"></td>
-
-            <td>7</td>
-            <td>Fine</td>
-            <td th:text="${formData['fine']}"></td>
-        </tr>
-
-        <tr>
-            <td>3</td>
-            <td>Property Tax Contribution</td>
-            <td th:text="${formData['property_tax_contribution']}"></td>
-
-            <td>8</td>
-            <td>Building Dev Fund</td>
-            <td th:text="${formData['building_dev_fund']}"></td>
-        </tr>
-
-        <tr>
-            <td>4</td>
-            <td>Sinking Fund</td>
-            <td th:text="${formData['sinking_fund']}"></td>
-
-            <td>9</td>
-            <td>Other</td>
-            <td th:text="${formData['other']}"></td>
-        </tr>
-
-        <tr>
-            <td>5</td>
-            <td>Due Date</td>
-            <td th:text="${formData['due_date']}"></td>
-
-            <td>10</td>
-            <td>Reserve Mhada Service Charge</td>
-            <td th:text="${formData['reserve_mhada_service_charge']}"></td>
-        </tr>
-        </tbody>
-    </table>
-
-    <table class="table table-bordered">
-        <tr>
-            <th>Bill For</th>
-            <td th:text="${formData['bill_for']}"></td>
-
-            <th>Current Month Total</th>
-            <td th:text="${current_month_total}"></td>
-        </tr>
-
-        <tr>
-            <th>Rupees</th>
-            <td th:text="${amount_due_in_words}"></td>
-
-            <th>Arrears</th>
-            <td th:text="${formData['arrears']}"></td>
-        </tr>
-
-        <tr>
-            <th>Building Fund Dues</th>
-            <td th:text="${formData['bldg_fund_due']}"></td>
-
-            <th>Amount Due</th>
-            <td th:text="${amount_due}"></td>
-        </tr>
-    </table>
-
-    <div class="text-center mt-4">
-        <form th:action="@{/api/bill/modify}" method="post" class="d-inline">
-            <button class="btn btn-warning">Modify Bill</button>
-        </form>
-
-        <form th:action="@{/api/preview-pdf}" method="get" target="_blank" class="d-inline">
-            <button class="btn btn-primary">Generate Bill</button>
-        </form>
-    </div>
-
 </div>
 
-</div>
 </body>
 </html>
-

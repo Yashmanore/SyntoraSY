@@ -110,8 +110,9 @@ export function AdminRegistration() {
 
     return (
         <div className="auth-container">
-            <h2>Admin Registration</h2>
+
             <form onSubmit={handleSubmit} className="auth-form" noValidate>
+            <h2>Admin Registration</h2>
                 <input
                     type="text"
                     name="name"
@@ -132,7 +133,7 @@ export function AdminRegistration() {
                 />
                 {errors.contact_no && <span className="error">{errors.contact_no}</span>}
 
-                <div className="password-field">
+                <div className="password-field-admin">
                 <input
                     type="email"
                     name="email_id"
@@ -144,7 +145,7 @@ export function AdminRegistration() {
                 </div>
                 {errors.email_id && <span className="error">{errors.email_id}</span>}
 
-                <div className="password-field">
+                <div className="password-field-admin">
                     <input
                         type={showPassword ? "text" : "password"}
                         name="adminPassword"
@@ -163,7 +164,7 @@ export function AdminRegistration() {
 
                 {errors.adminPassword && <span className="error">{errors.adminPassword}</span>}
 
-                <div className="password-field">
+                <div className="password-field-admin">
                     <input
                         type={showConfirmPassword ? "text" : "password"}
                         name="confirmPassword"

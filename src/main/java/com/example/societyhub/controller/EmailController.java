@@ -1,6 +1,7 @@
 package com.example.societyhub.controller;
 
 import com.example.societyhub.model.Announcement;
+import com.example.societyhub.model.Complaint;
 import com.example.societyhub.service.DBHandler;
 import com.example.societyhub.service.EmailOrchestrationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,7 +51,10 @@ public class EmailController {
             List<Announcement> announcements =
                     dbHandler.getAnnouncement(sid);
 
+            List<Complaint> complaints = dbHandler.getComplaintsBySociety(sid);
+
             model.addAttribute("announcements", announcements);
+            model.addAttribute("complaints", complaints);
 
         } catch (SQLException e) {
             log.error("Error fetching announcements", e);

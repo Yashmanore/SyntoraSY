@@ -125,11 +125,48 @@
         </div>
     </div>
 
-    <!-- Custom Email Section -->
+    <!-- Lodge Complaint Section -->
     <div class="custom-email-container">
-        <h2>Send Custom Email</h2>
-        <textarea placeholder="Type your message here..." th:placeholder="'Type your message here...'"></textarea>
-        <button class="btn" th:onclick="'sendCustomEmail()'">Send Email</button>
+        <h2>Lodge Complaint</h2>
+
+        <form th:action="@{/api/resident/complaint}" method="post">
+
+            <!-- Subject -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Subject</strong></label>
+                <input type="text"
+                       name="subject"
+                       placeholder="Enter complaint subject"
+                       required
+                       style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc;">
+            </div>
+
+            <!-- Priority -->
+<!--            <div style="margin-bottom: 15px;">-->
+<!--                <label><strong>Priority</strong></label>-->
+<!--                <select name="priority"-->
+<!--                        required-->
+<!--                        style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc;">-->
+<!--                    <option value="">Select Priority</option>-->
+<!--                    <option value="LOW">Low</option>-->
+<!--                    <option value="MEDIUM">Medium</option>-->
+<!--                    <option value="HIGH">High</option>-->
+<!--                </select>-->
+<!--            </div>-->
+
+            <!-- Description -->
+            <div style="margin-bottom: 15px;">
+                <label><strong>Description</strong></label>
+                <textarea name="description"
+                          placeholder="Describe your issue clearly..."
+                          required></textarea>
+            </div>
+
+            <button type="submit" class="btn">
+                Submit Complaint
+            </button>
+
+        </form>
     </div>
 
     <h5 class="fw-semibold mb-3">
@@ -169,35 +206,7 @@
 <script>
     // JavaScript to dynamically generate monthly bills for multiple years
     const billData = {
-        2022: [
-            { month: 0, paid: true },  // January
-            { month: 1, paid: false }, // February
-            { month: 2, paid: true },  // March
-            { month: 3, paid: false }, // April
-            { month: 4, paid: true },  // May
-            { month: 5, paid: true },  // June
-            { month: 6, paid: false }, // July
-            { month: 7, paid: true },  // August
-            { month: 8, paid: false }, // September
-            { month: 9, paid: true },  // October
-            { month: 10, paid: false }, // November
-            { month: 11, paid: true }   // December
-        ],
-        2023: [
-            { month: 0, paid: true },
-            { month: 1, paid: true },
-            { month: 2, paid: false },
-            { month: 3, paid: true },
-            { month: 4, paid: false },
-            { month: 5, paid: true },
-            { month: 6, paid: true },
-            { month: 7, paid: false },
-            { month: 8, paid: true },
-            { month: 9, paid: false },
-            { month: 10, paid: true },
-            { month: 11, paid: false }
-        ],
-        2024: [
+        2026: [
             { month: 0, paid: true },
             { month: 1, paid: false },
             { month: 2, paid: false },

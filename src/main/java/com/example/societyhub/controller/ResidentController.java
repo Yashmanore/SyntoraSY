@@ -1,6 +1,7 @@
 package com.example.societyhub.controller;
 
 import com.example.societyhub.model.Announcement;
+import com.example.societyhub.model.Complaint;
 import com.example.societyhub.service.DBHandler;
 import com.example.societyhub.model.Resident;
 import com.example.societyhub.model.Society;
@@ -16,6 +17,7 @@ import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +37,10 @@ public class ResidentController {
     @GetMapping("/resident_dashboard")
     public String getResidentDashboard(Model model, HttpSession session) {
 
+        model.addAttribute("test", "HELLO WORKING");
+
         String mygate_no = (String) session.getAttribute("residentMygate");
+        System.out.println("Session mygate: " + mygate_no);
 
         if (mygate_no == null) {
             model.addAttribute("error", "Session expired. Please login again.");
@@ -351,6 +356,59 @@ public class ResidentController {
             response.put("error", "Error updating resident status: " + e.getMessage());
         }
         return response;
+    }
+
+    @PostMapping("/resident/complaint")
+    public String submitComplaint(@RequestParam String subject,
+                                  @RequestParam String description,
+                                  HttpSession session,
+                                  Model model) {
+
+        String mygateNo = (String) session.getAttribute("residentMygate");
+
+        if (mygateNo == null) {
+            model.addAttribute("error", "Session expired. Please login again.");
+            return "error";
+        }
+
+        try {
+
+            // 1️⃣ Fetch resident from DB
+            Resident resident = dbHandler.getResident(mygateNo);
+
+            if (resident == null) {
+                model.addAttribute("error", "Resident not found.");
+                return "error";
+            }
+
+            // 2️⃣ Create complaint
+            Complaint complaint = new Complaint();
+            complaint.setSocietyId(resident.getSid());
+            complaint.setResidentName(resident.getName());
+            complaint.setFlatNo(String.valueOf(resident.getRoom_no()));
+            complaint.setSubject(subject);
+            complaint.setDescription(description);
+            complaint.setStatus("PENDING");
+            complaint.setCreatedAt(LocalDateTime.now());
+
+            // 3️⃣ Save to DB
+            dbHandler.saveComplaint(complaint);
+
+            // 4️⃣ Reload dashboard data
+            model.addAttribute("resident", resident);
+            List<Announcement> announcements =
+                    dbHandler.getAnnouncement(resident.getSid());
+            model.addAttribute("announcements", announcements);
+
+            model.addAttribute("message", "Complaint submitted successfully.");
+
+            return "resident_dashboard";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("error", "Failed to submit complaint.");
+            return "error";
+        }
     }
 }
 
