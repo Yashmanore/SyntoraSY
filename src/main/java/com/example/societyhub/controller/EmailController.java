@@ -196,4 +196,34 @@ public class EmailController {
 
         return "admin/notify_resident";
     }
+
+    @PostMapping("/bulk_email_bill")
+    @ResponseBody
+    public Map<String,String> bulkEmailBill(
+            @RequestBody Map<String,Object> payload,
+            HttpSession session) throws Exception {
+
+        Integer sid =
+                (Integer) session.getAttribute("adminSocietyId");
+
+        String month = (String) payload.get("month");
+
+        List<Map<String,String>> residents =
+                (List<Map<String,String>>) payload.get("residents");
+
+        for(Map<String,String> resident : residents){
+
+            String mygateNo = resident.get("mygate_no");
+            String status = resident.get("status");
+
+            orchestrationService.sendReceipt(
+                    mygateNo,
+                    month,
+                    status,
+                    sid
+            );
+        }
+
+        return Map.of("message","Emails sent");
+    }
 }

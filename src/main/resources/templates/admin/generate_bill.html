@@ -212,6 +212,26 @@
 
     <!-- Table -->
     <div class="table-wrapper">
+        <div style="margin-bottom:15px; display:flex; gap:10px; align-items:center;">
+
+            <input type="checkbox" id="selectAll">
+            <label>Select All</label>
+
+            <select id="bulkStatus" class="form-select" style="width:220px;">
+                <option value="">Change Status</option>
+                <option value="Paid">Paid</option>
+                <option value="Paid_with_fine">Paid with fine</option>
+            </select>
+
+            <button class="btn btn-primary" onclick="applyBulkStatus()">
+                Apply Status
+            </button>
+
+            <button class="btn btn-success" onclick="sendBulkReceipts()">
+                Send Selected Receipts
+            </button>
+
+        </div>
         <table>
             <thead>
             <tr>
@@ -229,7 +249,11 @@
 
             <tbody>
             <tr th:each="resident, stat : ${residents}">
-                <td><input type="checkbox"></td>
+                <td>
+                    <input type="checkbox"
+                           class="resident-checkbox"
+                           th:value="${resident.mygate_no}">
+                </td>
                 <td th:text="${stat.index + 1}"></td>
                 <td><input th:value="${resident.mygate_no}" data-mygate="true" readonly></td>
                 <td><input th:value="${resident.room_no}" data-room_no="true" readonly></td>
@@ -360,9 +384,13 @@
         });
     }
 
+    document.getElementById("selectAll")
+    .addEventListener("change", function () {
 
+        document.querySelectorAll(".resident-checkbox")
+            .forEach(cb => cb.checked = this.checked);
 
-
+    });
 
     document.addEventListener("DOMContentLoaded", function() {
         // Disable "Send Maintenance Bill Receipt" button if status is "Unpaid" on page load
@@ -396,6 +424,99 @@
             });
         });
     });
+
+
+    function applyBulkStatus() {
+
+        const status = document.getElementById("bulkStatus").value;
+
+        if (!status) {
+            alert("Select status first");
+            return;
+        }
+
+        const selectedResidents = [];
+
+        document.querySelectorAll(".resident-checkbox:checked")
+            .forEach(cb => {
+                selectedResidents.push(cb.value);
+            });
+
+        if (selectedResidents.length === 0) {
+            alert("No residents selected");
+            return;
+        }
+
+        fetch('/api/bulk_update_status', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                month: selectedMonth,
+                residents: selectedResidents,
+                status: status
+            })
+        })
+        .then(res => res.json())
+        .then(() => {
+
+        alert("Status updated successfully");
+
+        // Update status visually WITHOUT reload
+        document.querySelectorAll(".resident-checkbox:checked")
+            .forEach(cb => {
+
+                const row = cb.closest("tr");
+                const select =
+                    row.querySelector("[data-status]");
+
+                select.value = status;
+            });
+
+})
+        .catch(err => console.error(err));
+    }
+
+
+    function sendBulkReceipts() {
+
+        const selectedResidents = [];
+
+        document.querySelectorAll(".resident-checkbox:checked")
+            .forEach(cb => {
+
+                const row = cb.closest("tr");
+
+                selectedResidents.push({
+                    mygate_no: cb.value,
+                    email: row.querySelector("[data-email]").value,
+                    status: row.querySelector("[data-status]").value
+                });
+            });
+
+        if (selectedResidents.length === 0) {
+            alert("No residents selected");
+            return;
+        }
+
+        fetch('/api/bulk_email_bill', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                month: selectedMonth,
+                residents: selectedResidents
+            })
+        })
+        .then(res=>res.json())
+        .then(()=>{
+            alert("Receipts sent successfully!");
+
+            // ✅ Uncheck after sending
+            document.querySelectorAll(".resident-checkbox")
+                .forEach(cb => cb.checked = false);
+
+            document.getElementById("selectAll").checked = false;
+        });
+    }
 
 </script>
 

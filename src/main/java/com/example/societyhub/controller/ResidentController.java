@@ -410,6 +410,38 @@ public class ResidentController {
             return "error";
         }
     }
+
+    @PostMapping("/bulk_update_status")
+    @ResponseBody
+    public Map<String,String> bulkUpdateStatus(
+            @RequestBody Map<String,Object> payload,
+            HttpSession session) throws SQLException {
+
+        Integer sid =
+                (Integer) session.getAttribute("adminSocietyId");
+
+        String month = (String) payload.get("month");
+        String status = (String) payload.get("status");
+
+        List<String> residents =
+                (List<String>) payload.get("residents");
+
+        for(String mygateNo : residents){
+
+            int flag = determineFlag(month, status);
+
+            int year = LocalDate.now().getYear();
+
+            dbHandler.updateResidentBill(
+                    mygateNo,
+                    year,
+                    month,
+                    flag
+            );
+        }
+
+        return Map.of("message","Updated");
+    }
 }
 
 
