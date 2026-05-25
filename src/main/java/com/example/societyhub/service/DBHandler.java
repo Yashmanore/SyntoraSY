@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,30 +33,36 @@ public class DBHandler {
         List<Map<String, String>> residents = new ArrayList<>();
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            String query = "select mem_id, name, room_no, mr_ms, gender, age, contact_no, mygate_no, email, bhk from resident where sid = ?";
+            String query = "SELECT r.mem_id, r.age, r.contact_no, r.mygate_no, r.email, r.bhk, f.flat_no, r.is_tenant, t.name as tenant_name, t.contact_no as tenant_contact, t.email as tenant_email, t.bill_type as tenant_bill_type " +
+                    "FROM resident r LEFT JOIN flat f ON r.mygate_no = f.mygate_no " +
+                    "LEFT JOIN tenant t ON r.tenant_id = t.tenant_id " +
+                    "WHERE f.society_id = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                // Set the value for the 'sid' parameter
-                preparedStatement.setInt(1, sid); // Assuming 'sid' is of type int, adjust if it's another type
-
-                // Now execute the query
+                preparedStatement.setInt(1, sid);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     while (resultSet.next()) {
                         Map<String, String> resident = new HashMap<>();
                         resident.put("mem_id", resultSet.getString("mem_id"));
-                        resident.put("name", resultSet.getString("name"));
-                        resident.put("room_no", resultSet.getString("room_no"));
-                        resident.put("mr_ms", resultSet.getString("mr_ms"));
-                        resident.put("gender", resultSet.getString("gender"));
                         resident.put("age", resultSet.getString("age"));
                         resident.put("contact_no", resultSet.getString("contact_no"));
                         resident.put("mygate_no", resultSet.getString("mygate_no"));
                         resident.put("email", resultSet.getString("email"));
                         resident.put("bhk", resultSet.getString("bhk"));
+                        resident.put("flat_no", resultSet.getString("flat_no"));
+                        
+                        boolean isTenant = resultSet.getBoolean("is_tenant");
+                        resident.put("is_tenant", String.valueOf(isTenant));
+                        if (isTenant) {
+                            resident.put("tenant_name", resultSet.getString("tenant_name"));
+                            resident.put("tenant_contact", resultSet.getString("tenant_contact"));
+                            resident.put("tenant_email", resultSet.getString("tenant_email"));
+                            resident.put("tenant_bill_type", resultSet.getString("tenant_bill_type"));
+                        }
+                        
                         residents.add(resident);
                     }
                     connection.commit();
                 } catch (Exception e) {
-                    // Rollback the transaction in case of an error
                     connection.rollback();
                     e.printStackTrace();
                     throw new SQLException("Error ", e);
@@ -69,34 +76,42 @@ public class DBHandler {
         List<Resident> residents = new ArrayList<>();
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            String query = "select mem_id, name, room_no, mr_ms, gender, age, contact_no, mygate_no, email, bhk from resident where sid = ?";
+            String query = "SELECT r.mem_id, r.name, f.flat_no as room_no, r.mr_ms, r.gender, r.age, r.contact_no, r.isadmin, r.mygate_no, r.bhk, r.email, r.is_tenant, t.name as tenant_name, t.contact_no as tenant_contact, t.email as tenant_email, t.bill_type as tenant_bill_type " +
+                    "FROM resident r LEFT JOIN flat f ON r.mygate_no = f.mygate_no " +
+                    "LEFT JOIN tenant t ON r.tenant_id = t.tenant_id " +
+                    "WHERE f.society_id = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                // Set the value for the 'sid' parameter
-                preparedStatement.setInt(1, sid); // Assuming 'sid' is of type int, adjust if it's another type
-
-                // Now execute the query
+                preparedStatement.setInt(1, sid);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     while (resultSet.next()) {
                         Resident resident = new Resident();
                         resident.setMem_id(resultSet.getString("mem_id"));
                         resident.setName(resultSet.getString("name"));
-//                        resident.setRoom_no(Integer.parseInt(resultSet.getString("room_no")));
-                        int roomNo = resultSet.getInt("room_no");
-                        resident.setRoom_no(resultSet.wasNull() ? null : roomNo);
+                        resident.setRoom_no(resultSet.getString("room_no"));
                         resident.setMr_ms(resultSet.getString("mr_ms"));
                         resident.setGender(resultSet.getString("gender"));
-//                        resident.setAge(Integer.parseInt(resultSet.getString("age")));
                         int age = resultSet.getInt("age");
                         resident.setAge(resultSet.wasNull() ? null : age);
-                        resident.setContactNo(resultSet.getString("contact_no"));
+                        resident.setContact_no(resultSet.getString("contact_no"));
+                        resident.setIs_admin(resultSet.getBoolean("isadmin"));
                         resident.setMygate_no(resultSet.getString("mygate_no"));
-                        resident.setEmail(resultSet.getString("email"));
                         resident.setBhk(resultSet.getString("bhk"));
-//                        resident.setStatus(resultSet.getString("status"));
+                        resident.setEmail(resultSet.getString("email"));
+                        
+                        boolean isTenant = resultSet.getBoolean("is_tenant");
+                        resident.setIs_tenant(isTenant);
+                        if (isTenant) {
+                            Tenant tenant = new Tenant();
+                            tenant.setName(resultSet.getString("tenant_name"));
+                            tenant.setContact_no(resultSet.getString("tenant_contact"));
+                            tenant.setEmail(resultSet.getString("tenant_email"));
+                            tenant.setBill_type(resultSet.getString("tenant_bill_type"));
+                            resident.setTenant(tenant);
+                        }
+                        
                         residents.add(resident);
-
-                        connection.commit();
                     }
+                    connection.commit();
                 } catch (Exception e) {
                     e.printStackTrace();
                     throw new SQLException("Error ", e);
@@ -106,87 +121,57 @@ public class DBHandler {
         return residents;
     }
 
+    // TODO: getResidentBillDetails needs to be reworked for the new billing schema
+    //       (unit_bill_record + bill_line_item instead of resident_bill columns).
+    //       Returning basic resident info for now.
     public List<Resident> getResidentBillDetails(String month, int sid) throws SQLException {
-        List<Resident> residents = new ArrayList<>();
-
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
-            // Query to fetch resident details along with the boolean status for the given month
-            String query = "SELECT r.mem_id, r.name, r.room_no, r.mr_ms, r.gender, r.age, r.contact_no, " +
-                    "r.mygate_no, r.email, r.bhk, rb." + month + " AS status " +
-                    "FROM resident r " +
-                    "JOIN resident_bill rb ON r.mygate_no = rb.mygate_no " +
-                    "WHERE r.sid = ?";
-
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                // Set the value for the 'sid' parameter
-                preparedStatement.setInt(1, sid);
-
-                // Execute the query
-                try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                    while (resultSet.next()) {
-                        Resident resident = new Resident();
-                        resident.setMem_id(resultSet.getString("mem_id"));
-                        resident.setName(resultSet.getString("name"));
-                        resident.setRoom_no(resultSet.getInt("room_no"));
-                        resident.setMr_ms(resultSet.getString("mr_ms"));
-                        resident.setGender(resultSet.getString("gender"));
-                        resident.setAge(resultSet.getInt("age"));
-                        resident.setContactNo(resultSet.getString("contact_no"));
-                        resident.setMygate_no(resultSet.getString("mygate_no"));
-                        resident.setEmail(resultSet.getString("email"));
-                        resident.setBhk(resultSet.getString("bhk"));
-                        resident.setMonth(month);
-
-                        // Retrieve and set the boolean value for the given month
-                        resident.setStatus(String.valueOf(resultSet.getInt("status")));
-
-                        residents.add(resident);
-                    }
-                    connection.commit();
-                }
-            } catch (Exception e) {
-                // Rollback the transaction in case of an error
-                connection.rollback();
-                e.printStackTrace();
-                throw new SQLException("Error ", e);
-            }
-        }
-        return residents;
+        return getResident(sid);
     }
 
     public Resident getResident(String mygate_no) throws SQLException {
-        Resident resident = null; // Initialize as null
+        Resident resident = null;
 
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
-            String query = "select sid, name, room_no, mr_ms, gender, age, contact_no, email, bhk from resident where mygate_no = ?";
+            String query = "SELECT r.mem_id, r.name, f.flat_no as room_no, r.mr_ms, r.gender, r.age, r.contact_no, r.isadmin, r.mygate_no, r.bhk, r.email, r.is_tenant, t.name as tenant_name, t.contact_no as tenant_contact, t.email as tenant_email, t.bill_type as tenant_bill_type FROM resident r LEFT JOIN flat f ON r.mygate_no = f.mygate_no LEFT JOIN tenant t ON r.tenant_id = t.tenant_id WHERE r.mygate_no = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setString(1, mygate_no); // Set the 'mygate_no' parameter
+                preparedStatement.setString(1, mygate_no);
 
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                    if (resultSet.next()) { // Check if data exists
+                    if (resultSet.next()) {
                         resident = new Resident();
-                        resident.setSid(resultSet.getInt("sid"));
+                        resident.setMem_id(resultSet.getString("mem_id"));
                         resident.setName(resultSet.getString("name"));
-                        resident.setRoom_no(resultSet.getInt("room_no"));
+                        resident.setRoom_no(resultSet.getString("room_no"));
                         resident.setMr_ms(resultSet.getString("mr_ms"));
                         resident.setGender(resultSet.getString("gender"));
                         resident.setAge(resultSet.getInt("age"));
-                        resident.setContactNo(resultSet.getString("contact_no"));
-                        resident.setEmail(resultSet.getString("email"));
+                        resident.setContact_no(resultSet.getString("contact_no"));
+                        resident.setIs_admin(resultSet.getBoolean("isadmin"));
+                        resident.setMygate_no(mygate_no);
                         resident.setBhk(resultSet.getString("bhk"));
+                        resident.setEmail(resultSet.getString("email"));
+                        
+                        boolean isTenant = resultSet.getBoolean("is_tenant");
+                        resident.setIs_tenant(isTenant);
+                        if (isTenant) {
+                            Tenant tenant = new Tenant();
+                            tenant.setName(resultSet.getString("tenant_name"));
+                            tenant.setContact_no(resultSet.getString("tenant_contact"));
+                            tenant.setEmail(resultSet.getString("tenant_email"));
+                            tenant.setBill_type(resultSet.getString("tenant_bill_type"));
+                            resident.setTenant(tenant);
+                        }
                     }
                     connection.commit();
                 } catch (Exception e) {
-                    // Rollback the transaction in case of an error
                     connection.rollback();
                     e.printStackTrace();
                     throw new SQLException("Error ", e);
                 }
             }
         }
-        return resident; // Return null if no data found
+        return resident;
     }
 
 
@@ -319,20 +304,17 @@ public class DBHandler {
     }
 
     // Method to add a new resident
-    public void addResident(Resident resident) throws Exception {
-        System.out.println("Welcome 3");
+    // Method to add a new resident (new schema: no sid, name, room_no, mr_ms, gender on resident)
+    public void addResident(Resident resident, int societyId) throws Exception {
 
-        // SQL query to insert a new resident
-        String query = "insert into resident (mem_id, sid, name, room_no, mr_ms, gender, age, contact_no, isadmin, mygate_no, bhk, email) values (?, ?, ?, ?, ?, ?, ?, ?, false, ?, ?, ?)";
+        String query = "INSERT INTO resident (mem_id, age, contact_no, isadmin, mygate_no, bhk, email, is_tenant, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        // Connect to the database
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 
-            // Get the current highest mem_id for the society
-            String getMaxMemIdQuery = "select coalesce(max(mem_id), 0) from resident where sid = ?";
+            // Get the current highest mem_id globally
+            String getMaxMemIdQuery = "SELECT COALESCE(MAX(CAST(mem_id AS INTEGER)), 0) FROM resident";
             try (PreparedStatement getMaxMemIdStatement = connection.prepareStatement(getMaxMemIdQuery)) {
-                getMaxMemIdStatement.setInt(1, (resident.getSid()));
                 ResultSet resultSet = getMaxMemIdStatement.executeQuery();
 
                 int currentMaxMemId = 0;
@@ -340,36 +322,53 @@ public class DBHandler {
                     currentMaxMemId = resultSet.getInt(1);
                 }
 
-                // Prepare for the next mem_id (e.g., sid001, sid002, etc.)
-                int mem_id = currentMaxMemId == 0 ? Integer.parseInt(resident.getSid() + "001") : currentMaxMemId + 1;
+                int mem_id = currentMaxMemId == 0 ? Integer.parseInt(societyId + "001") : currentMaxMemId + 1;
 
                 // Generate a unique MyGate number
                 String myGateNo = myGateService.generateUniqueMyGateNumber(new HashSet<>());
+                
+                Integer tenantId = null;
+                if (Boolean.TRUE.equals(resident.getIs_tenant()) && resident.getTenant() != null) {
+                    String insertTenant = "INSERT INTO tenant (name, contact_no, email, bill_type) VALUES (?, ?, ?, ?)";
+                    try (PreparedStatement pstmt = connection.prepareStatement(insertTenant, Statement.RETURN_GENERATED_KEYS)) {
+                        pstmt.setString(1, resident.getTenant().getName());
+                        pstmt.setString(2, resident.getTenant().getContact_no());
+                        pstmt.setString(3, resident.getTenant().getEmail());
+                        pstmt.setString(4, resident.getTenant().getBill_type());
+                        pstmt.executeUpdate();
+                        try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                            if (rs.next()) {
+                                tenantId = rs.getInt(1);
+                            }
+                        }
+                    }
+                }
 
-                // Prepare statement for resident insertion
                 try (PreparedStatement statement = connection.prepareStatement(query)) {
-                    System.out.println("Welcome 4");
+                    statement.setString(1, String.valueOf(mem_id));
+                    statement.setInt(2, resident.getAge());
+                    statement.setString(3, resident.getContact_no());
+                    statement.setBoolean(4, resident.getIs_admin() != null ? resident.getIs_admin() : false);
+                    statement.setString(5, myGateNo);
+                    statement.setString(6, resident.getBhk());
+                    statement.setString(7, resident.getEmail());
+                    statement.setBoolean(8, resident.getIs_tenant() != null ? resident.getIs_tenant() : false);
+                    if (tenantId != null) {
+                        statement.setInt(9, tenantId);
+                    } else {
+                        statement.setNull(9, java.sql.Types.INTEGER);
+                    }
 
-                    // Set parameters for the SQL insert query
-                    statement.setInt(1, mem_id);
-                    statement.setInt(2, (resident.getSid()));
-                    statement.setString(3, resident.getName());
-                    statement.setInt(4, resident.getRoom_no());
-                    statement.setString(5, resident.getMr_ms());
-                    statement.setString(6, resident.getGender());
-                    statement.setInt(7, resident.getAge());
-                    statement.setString(8, resident.getContactNo());
-                    statement.setString(9, myGateNo);
-                    statement.setString(10, resident.getBhk());
-                    System.out.println("BHK: " + resident.getBhk());
-                    statement.setString(11, resident.getEmail());
-                    System.out.println("Email: " + resident.getEmail());
-//                    statement.setString(12, resident.getStatus());
-//                    System.out.println("Status: " + resident.getStatus());
-
-                    // Execute the insert query
                     statement.executeUpdate();
-
+                    
+                    if (Boolean.TRUE.equals(resident.getIs_tenant())) {
+                        String updateFlat = "UPDATE flat SET occupancy_type = 'TENANT' WHERE mygate_no = ?";
+                        try (PreparedStatement flatStmt = connection.prepareStatement(updateFlat)) {
+                            flatStmt.setString(1, myGateNo);
+                            flatStmt.executeUpdate();
+                        }
+                    }
+                    
                     connection.commit();
                 }
             }
@@ -399,31 +398,78 @@ public class DBHandler {
     }
 
     public void updateResident(Resident resident) throws SQLException {
-        // Updated SQL query to reference the correct column name
-        String sql = "update resident set room_no = ?, mr_ms = ?, gender = ?, age = ?, contact_no = ?, bhk = ?, email = ? where mygate_no = ?";
-
-        try (Connection connection = dataSource.getConnection(); // Implement your database connection method
-             PreparedStatement statement = connection.prepareStatement(sql)){
+        try (Connection connection = dataSource.getConnection()){
             connection.setAutoCommit(false);
+            
+            Integer tenantId = null;
+            if (Boolean.TRUE.equals(resident.getIs_tenant()) && resident.getTenant() != null) {
+                // First get existing tenant_id
+                String getTenantId = "SELECT tenant_id FROM resident WHERE mygate_no = ?";
+                try (PreparedStatement pt = connection.prepareStatement(getTenantId)) {
+                    pt.setString(1, resident.getMygate_no());
+                    ResultSet rs = pt.executeQuery();
+                    if (rs.next()) {
+                        tenantId = rs.getInt("tenant_id");
+                        if (rs.wasNull()) tenantId = null;
+                    }
+                }
+                
+                if (tenantId != null) {
+                    // Update existing
+                    String updateTenant = "UPDATE tenant SET name = ?, contact_no = ?, email = ?, bill_type = ? WHERE tenant_id = ?";
+                    try (PreparedStatement pu = connection.prepareStatement(updateTenant)) {
+                        pu.setString(1, resident.getTenant().getName());
+                        pu.setString(2, resident.getTenant().getContact_no());
+                        pu.setString(3, resident.getTenant().getEmail());
+                        pu.setString(4, resident.getTenant().getBill_type());
+                        pu.setInt(5, tenantId);
+                        pu.executeUpdate();
+                    }
+                } else {
+                    // Insert new
+                    String insertTenant = "INSERT INTO tenant (name, contact_no, email, bill_type) VALUES (?, ?, ?, ?)";
+                    try (PreparedStatement pstmt = connection.prepareStatement(insertTenant, Statement.RETURN_GENERATED_KEYS)) {
+                        pstmt.setString(1, resident.getTenant().getName());
+                        pstmt.setString(2, resident.getTenant().getContact_no());
+                        pstmt.setString(3, resident.getTenant().getEmail());
+                        pstmt.setString(4, resident.getTenant().getBill_type());
+                        pstmt.executeUpdate();
+                        try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                            if (rs.next()) {
+                                tenantId = rs.getInt(1);
+                            }
+                        }
+                    }
+                }
+            }
 
-            statement.setInt(1, resident.getRoom_no());
-            statement.setString(2, resident.getMr_ms());
-            statement.setString(3, resident.getGender());
-            statement.setInt(4, resident.getAge());
-            statement.setString(5, resident.getContactNo());
-            statement.setString(6, resident.getBhk());
-            statement.setString(7, resident.getEmail());
-//            statement.setString(8, resident.getStatus());
-            statement.setString(8, resident.getMygate_no());
+            String sql = "UPDATE resident SET age = ?, contact_no = ?, bhk = ?, email = ?, is_tenant = ?, tenant_id = ? WHERE mygate_no = ?";
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, resident.getAge());
+                statement.setString(2, resident.getContact_no());
+                statement.setString(3, resident.getBhk());
+                statement.setString(4, resident.getEmail());
+                statement.setBoolean(5, resident.getIs_tenant() != null ? resident.getIs_tenant() : false);
+                if (tenantId != null) {
+                    statement.setInt(6, tenantId);
+                } else {
+                    statement.setNull(6, java.sql.Types.INTEGER);
+                }
+                statement.setString(7, resident.getMygate_no());
+                statement.executeUpdate();
+            }
 
-            // Execute the insert query
-            statement.executeUpdate();
+            if (Boolean.TRUE.equals(resident.getIs_tenant())) {
+                String updateFlat = "UPDATE flat SET occupancy_type = 'TENANT' WHERE mygate_no = ?";
+                try (PreparedStatement flatStmt = connection.prepareStatement(updateFlat)) {
+                    flatStmt.setString(1, resident.getMygate_no());
+                    flatStmt.executeUpdate();
+                }
+            }
 
             connection.commit();
 
         } catch (Exception e) {
-            // Rollback the transaction in case of an error
-//            connection.rollback();
             e.printStackTrace();
             throw new SQLException("Error ", e);
         }
@@ -695,14 +741,15 @@ public class DBHandler {
         return society;
     }
 
+    // TODO: insertOrUpdateBill needs full rework for new schema.
+    //       Bill now only has id, sid, due_date, created_at, month, year.
+    //       Charge details go into bill_line_item + charge_type_history.
     public void insertOrUpdateBill(Bill bill) throws SQLException {
-        // Check if a bill already exists for the given sid
         String selectQuery = "SELECT COUNT(*) FROM bill WHERE sid = ?";
-        String insertQuery = "INSERT INTO bill (sid, maintenance_contribution, housing_board_contribution, property_tax_contribution, sinking_fund, reserve_mhada_service_charge, sub_charge, fine, building_dev_fund, other, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        String updateQuery = "UPDATE bill SET maintenance_contribution = ?, housing_board_contribution = ?, property_tax_contribution = ?, sinking_fund = ?, reserve_mhada_service_charge = ?, sub_charge = ?, fine = ?, building_dev_fund = ?, other = ?, due_date = ?  WHERE sid = ?";
+        String insertQuery = "INSERT INTO bill (sid, due_date) VALUES (?, ?)";
+        String updateQuery = "UPDATE bill SET due_date = ? WHERE sid = ?";
 
         try (Connection connection = dataSource.getConnection()) {
-            // Check if a bill already exists for the given sid
             try (PreparedStatement selectStatement = connection.prepareStatement(selectQuery)) {
                 connection.setAutoCommit(false);
                 selectStatement.setInt(1, bill.getSid());
@@ -711,38 +758,17 @@ public class DBHandler {
                 int count = resultSet.getInt(1);
 
                 if (count > 0) {
-                    // Bill already exists for this sid, update it
                     try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
-                        updateStatement.setInt(1, bill.getMaintenance_contribution());
-                        updateStatement.setInt(2, bill.getHousing_board_contribution());
-                        updateStatement.setInt(3, bill.getProperty_tax_contribution());
-                        updateStatement.setInt(4, bill.getSinking_fund());
-                        updateStatement.setInt(5, bill.getReserve_mhada_service_charge());
-                        updateStatement.setInt(6, bill.getSub_charge());
-                        updateStatement.setInt(7, bill.getFine());
-                        updateStatement.setInt(8, bill.getBuilding_dev_fund());
-                        updateStatement.setInt(9, bill.getOther());
-                        updateStatement.setDate(10, Date.valueOf(bill.getDue_date()));
-                        updateStatement.setInt(11, bill.getSid());
+                        updateStatement.setDate(1, Date.valueOf(bill.getDue_date()));
+                        updateStatement.setInt(2, bill.getSid());
                         updateStatement.executeUpdate();
                         connection.commit();
                     }
                 } else {
-                    // No bill exists, insert a new one
                     try (PreparedStatement insertStatement = connection.prepareStatement(insertQuery)) {
                         insertStatement.setInt(1, bill.getSid());
-                        insertStatement.setInt(2, bill.getMaintenance_contribution());
-                        insertStatement.setInt(3, bill.getHousing_board_contribution());
-                        insertStatement.setInt(4, bill.getProperty_tax_contribution());
-                        insertStatement.setInt(5, bill.getSinking_fund());
-                        insertStatement.setInt(6, bill.getReserve_mhada_service_charge());
-                        insertStatement.setInt(7, bill.getSub_charge());
-                        insertStatement.setInt(8, bill.getFine());
-                        insertStatement.setInt(9, bill.getBuilding_dev_fund());
-                        insertStatement.setInt(10, bill.getOther());
-                        insertStatement.setDate(11, Date.valueOf(bill.getDue_date()));
+                        insertStatement.setDate(2, Date.valueOf(bill.getDue_date()));
                         insertStatement.executeUpdate();
-
                         connection.commit();
                     }
                 }
@@ -757,24 +783,21 @@ public class DBHandler {
     public Bill fetchBillDetails(int sid) throws SQLException {
         Bill bill = null;
         try (Connection connection = dataSource.getConnection()) {
-            String query = "select * from bill where sid = ?";
+            String query = "SELECT id, sid, due_date, created_at, month, year FROM bill WHERE sid = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setInt(1, sid);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         bill = new Bill();
-                        bill.setSid(resultSet.getInt("id"));
+                        bill.setId(resultSet.getInt("id"));
                         bill.setSid(resultSet.getInt("sid"));
-                        bill.setMaintenance_contribution(resultSet.getInt("maintenance_contribution"));
-                        bill.setHousing_board_contribution(resultSet.getInt("housing_board_contribution"));
-                        bill.setProperty_tax_contribution(resultSet.getInt("property_tax_contribution"));
-                        bill.setSinking_fund(resultSet.getInt("sinking_fund"));
-                        bill.setReserve_mhada_service_charge(resultSet.getInt("reserve_mhada_service_charge"));
-                        bill.setSub_charge(resultSet.getInt("sub_charge"));
-                        bill.setFine(resultSet.getInt("fine"));
-                        bill.setBuilding_dev_fund(resultSet.getInt("building_dev_fund"));
-                        bill.setOther(resultSet.getInt("other"));
                         bill.setDue_date(String.valueOf(resultSet.getDate("due_date")));
+                        Timestamp ts = resultSet.getTimestamp("created_at");
+                        if (ts != null) {
+                            bill.setCreated_at(ts.toLocalDateTime());
+                        }
+                        bill.setMonth(resultSet.getString("month"));
+                        bill.setYear(resultSet.getInt("year"));
                     }
                 }
             }
@@ -785,24 +808,22 @@ public class DBHandler {
     public Bill fetchBill(String mygate_no, String month, int sid) throws SQLException {
         Bill bill = null;
         try (Connection connection = dataSource.getConnection()) {
-            String query = "select * from bill where sid = ?";
+            String query = "SELECT id, sid, due_date, created_at, month, year FROM bill WHERE sid = ? AND month = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setInt(1, sid);
+                preparedStatement.setString(2, month.toLowerCase());
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         bill = new Bill();
-                        bill.setSid(resultSet.getInt("id"));
+                        bill.setId(resultSet.getInt("id"));
                         bill.setSid(resultSet.getInt("sid"));
-                        bill.setMaintenance_contribution(resultSet.getInt("maintenance_contribution"));
-                        bill.setHousing_board_contribution(resultSet.getInt("housing_board_contribution"));
-                        bill.setProperty_tax_contribution(resultSet.getInt("property_tax_contribution"));
-                        bill.setSinking_fund(resultSet.getInt("sinking_fund"));
-                        bill.setReserve_mhada_service_charge(resultSet.getInt("reserve_mhada_service_charge"));
-                        bill.setSub_charge(resultSet.getInt("sub_charge"));
-                        bill.setFine(resultSet.getInt("fine"));
-                        bill.setBuilding_dev_fund(resultSet.getInt("building_dev_fund"));
-                        bill.setOther(resultSet.getInt("other"));
                         bill.setDue_date(String.valueOf(resultSet.getDate("due_date")));
+                        Timestamp ts = resultSet.getTimestamp("created_at");
+                        if (ts != null) {
+                            bill.setCreated_at(ts.toLocalDateTime());
+                        }
+                        bill.setMonth(resultSet.getString("month"));
+                        bill.setYear(resultSet.getInt("year"));
                     }
                 }
             }
@@ -882,7 +903,6 @@ public class DBHandler {
                         announcement.setTitle(resultSet.getString("title"));
                         announcement.setCategory(resultSet.getString("category"));
                         announcement.setMessage(resultSet.getString("message"));
-//                        announcement.setCreatedAt(resultSet.getTimestamp("created_at").toLocalDateTime());
                         Timestamp ts = resultSet.getTimestamp("created_at");
                         if (ts != null) {
                             announcement.setCreatedAt(ts.toLocalDateTime());

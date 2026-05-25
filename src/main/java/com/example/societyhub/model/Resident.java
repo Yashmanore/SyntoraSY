@@ -6,21 +6,24 @@ import lombok.Setter;
 @Setter
 @Getter
 public class Resident {
-    // Getters and setters
-    private String mem_id;
-    private Integer sid;
+    private String mem_id;   // PK
+    private Integer age;
+    private String contact_no;
+    private Boolean is_admin;
+    private String mygate_no;
+    private String bhk;
+    private String email;
+    private String password;
+    
     private String name;
-    private Integer room_no;
+    private String room_no;
     private String mr_ms;
     private String gender;
-    private Integer age;
-    private String contactNo;
-    private Boolean isAdmin;
-    private String status;
-    private String mygate_no;
-    private String email;
-    private String bhk;
-    private String residentPassword;
-    private String month;
-    private Boolean isMonthStatus;
+    
+    private Boolean is_tenant;
+    private Tenant tenant;
+
+    // Billing status populated from unit_bill_record for the selected month.
+    // Defaults to "Unpaid" if no bill record exists yet.
+    private String status = "Unpaid";
 }

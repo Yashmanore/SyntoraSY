@@ -82,7 +82,7 @@ public class AuthController {
                         .body(Map.of("message", "User does not exist"));
             }
 
-            if (!passwordService.matches(resident.getResidentPassword(), storedHash)) {
+            if (!passwordService.matches(resident.getPassword(), storedHash)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Invalid credentials"));
             }
@@ -206,7 +206,7 @@ public class AuthController {
                     "MyGate Authentication OTP",
                     "Your OTP is: " + otp,
                     null,
-                    resident.getName()
+                    resident.getMem_id()
             );
 
             log.info("OTP sent for {}", mygateNo);

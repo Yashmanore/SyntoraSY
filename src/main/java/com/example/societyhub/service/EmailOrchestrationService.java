@@ -34,7 +34,7 @@ public class EmailOrchestrationService {
 
         for (Resident resident : residents) {
 
-            Map<String, String> data =
+            Map<String, Object> data =
                     assemblerService.build(
                             resident.getMygate_no(),
                             "",
@@ -48,7 +48,7 @@ public class EmailOrchestrationService {
             mailService.sendEmail(
                     resident.getEmail(),
                     "Monthly Maintenance Bill",
-                    "Dear " + resident.getName()
+                    "Dear " + resident.getMem_id()
                             + ",\n\nPlease find attached your maintenance bill.",
                     pdf,
                     "Maintenance_Bill.pdf"
@@ -62,19 +62,26 @@ public class EmailOrchestrationService {
             String mygateNo,
             String month,
             String status,
-            int sid
+            int sid,
+            String targetEmail
     ) throws Exception {
 
-        Map<String, String> data =
+        Map<String, Object> data =
                 assemblerService.build(mygateNo, month, status, sid);
+        
+        if (targetEmail != null && !targetEmail.trim().isEmpty()) {
+            data.put("email", targetEmail);
+        } else {
+            targetEmail = (String) data.get("email");
+        }
 
         byte[] pdf =
                 pdfService.generatePdf("admin/receipt", data);
 
         mailService.sendEmail(
-                data.get("email"),
+                targetEmail,
                 "Maintenance Receipt",
-                "Dear " + data.get("name")
+                "Dear " + data.get("mem_id")
                         + ",\n\nPlease find your receipt attached.",
                 pdf,
                 "Receipt.pdf"
@@ -90,7 +97,7 @@ public class EmailOrchestrationService {
         for (Resident resident : residents) {
 
             String body =
-                    "Dear " + resident.getName()
+                    "Dear " + resident.getMem_id()
                             + ",\n\nYour MyGate number is: "
                             + resident.getMygate_no();
 
@@ -115,7 +122,7 @@ public class EmailOrchestrationService {
 
             String personalized =
                     message.replace("{name}",
-                            resident.getName());
+                            resident.getMem_id());
 
             mailService.sendEmail(
                     resident.getEmail(),

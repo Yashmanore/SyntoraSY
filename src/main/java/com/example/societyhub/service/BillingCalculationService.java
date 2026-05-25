@@ -1,51 +1,68 @@
 package com.example.societyhub.service;
 
-import com.example.societyhub.model.Bill;
+import com.example.societyhub.model.UnitBillRecord;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class BillingCalculationService {
 
-    public Map<String, Object> calculate(Bill bill, String status) {
+    private final BillingService billingService;
 
-        double baseTotal =
-                bill.getMaintenance_contribution()
-                        + bill.getHousing_board_contribution()
-                        + bill.getProperty_tax_contribution()
-                        + bill.getSinking_fund()
-                        + bill.getReserve_mhada_service_charge()
-                        + bill.getSub_charge()
-                        + bill.getOther()
-                        + bill.getBuilding_dev_fund();
+    @Autowired
+    public BillingCalculationService(@Lazy BillingService billingService) {
+        this.billingService = billingService;
+    }
 
-        double fineAmount = bill.getFine();
+    /**
+     * Calculate totals for a specific flat's bill (UnitBillRecord).
+     * Sums all BillLineItem amounts from the DB via BillingService.
+     */
+    public Map<String, Object> calculateForUnitBill(int unitBillRecordId, String status) throws SQLException {
+        BigDecimal baseTotal = billingService.calculateTotalForUnitBill(unitBillRecordId);
+        BigDecimal fineAmount = BigDecimal.ZERO;
 
-        String normalized =
-                status == null ? "" :
-                        status.trim()
-                                .toLowerCase()
-                                .replace(" ", "_");
+        String normalized = status == null ? "" :
+                status.trim().toLowerCase().replace(" ", "_");
 
-        double finalTotal = baseTotal;
-        double finalFine = 0.0;
-
-        if (normalized.equals("paid_with_fine")) {
-            finalTotal += fineAmount;
-            finalFine = fineAmount;
+        BigDecimal finalTotal = baseTotal;
+        if ("paid_with_fine".equals(normalized)) {
+            // Fine logic: configurable in the future; default 10% for now
+            fineAmount = baseTotal.multiply(new BigDecimal("0.10"));
+            finalTotal = finalTotal.add(fineAmount);
         }
-
-        // If status is only "paid" or anything else,
-        // fine remains 0 and total remains baseTotal
 
         Map<String, Object> result = new HashMap<>();
         result.put("total", finalTotal);
-        result.put("fineAmount", finalFine);
+        result.put("baseTotal", baseTotal);
+        result.put("fineAmount", fineAmount);
 
         return result;
     }
+
+    /**
+     * Get a full bill breakdown for a specific flat (charges + totals).
+     */
+    public Map<String, Object> getFullBillBreakdown(int flatId, String month, int year) throws SQLException {
+        return billingService.getBillSummaryForFlat(flatId, month, year);
+    }
+
+    /**
+     * Calculate totals for all flats in a society for a billing cycle.
+     * Returns a list of maps, each containing flat_id, total, status, etc.
+     */
+    public List<UnitBillRecord> getSocietyBillSummary(int societyId, String month, int year) throws SQLException {
+        return billingService.getUnitBillRecordsBySociety(societyId, month, year);
+    }
+
+    // ─── UTILITY METHODS (preserved) ────────────────────────────────────────────
 
     public static String convertNumberToWords(int number) {
         if (number == 0) {

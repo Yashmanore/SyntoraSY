@@ -2,7 +2,10 @@ package com.example.societyhub.controller;
 
 import com.example.societyhub.model.Announcement;
 import com.example.societyhub.model.Complaint;
+import com.example.societyhub.model.Flat;
+import com.example.societyhub.service.BillingService;
 import com.example.societyhub.service.DBHandler;
+import com.example.societyhub.service.FlatService;
 import com.example.societyhub.model.Resident;
 import com.example.societyhub.model.Society;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,11 +31,20 @@ import java.util.Map;
 public class ResidentController {
     private static final Logger Log = LogManager.getLogger(ResidentController.class);
 
-    @Autowired
-    private DBHandler dbHandler;
+    private final DBHandler dbHandler;
+    private final FlatService flatService;
+    private final BillingService billingService;
+    private final ThymeleafViewResolver thymeleafViewResolver;
 
     @Autowired
-    private ThymeleafViewResolver thymeleafViewResolver;
+    public ResidentController(DBHandler dbHandler, FlatService flatService,
+                               BillingService billingService,
+                               ThymeleafViewResolver thymeleafViewResolver) {
+        this.dbHandler = dbHandler;
+        this.flatService = flatService;
+        this.billingService = billingService;
+        this.thymeleafViewResolver = thymeleafViewResolver;
+    }
 
     @GetMapping("/resident_dashboard")
     public String getResidentDashboard(Model model, HttpSession session) {
@@ -48,7 +60,7 @@ public class ResidentController {
         }
 
         try {
-            // 1️⃣ Get resident
+            // 1. Get resident
             Resident resident = dbHandler.getResident(mygate_no);
 
             if (resident == null) {
@@ -58,12 +70,16 @@ public class ResidentController {
 
             model.addAttribute("resident", resident);
 
-            // 2️⃣ Get SID from resident (IMPORTANT)
-            Integer sid = resident.getSid();
+            // 2. Get SID from flat (Resident no longer has sid)
+            Flat flat = flatService.getFlatByMygate(mygate_no);
+            if (flat != null) {
+                Integer sid = flat.getSociety_id();
+                model.addAttribute("flat", flat);
 
-            // 3️⃣ Fetch announcements safely
-            List<Announcement> announcements = dbHandler.getAnnouncement(sid);
-            model.addAttribute("announcements", announcements);
+                // 3. Fetch announcements safely
+                List<Announcement> announcements = dbHandler.getAnnouncement(sid);
+                model.addAttribute("announcements", announcements);
+            }
 
             return "resident_dashboard";
 
@@ -80,34 +96,30 @@ public class ResidentController {
 
         if (sid == null) {
             model.addAttribute("error", "Admin society ID not found");
-            return "error"; // Redirect to an error page or handle accordingly
+            return "error";
         }
 
         try {
             Society society = dbHandler.getSocietyBySid(sid);
             model.addAttribute("society_name", society.getName());
-            List<Resident> residents = dbHandler.getResident(sid); // Method to get all residents based on society ID
+            List<Resident> residents = dbHandler.getResident(sid);
             if (residents == null || residents.isEmpty()) {
                 model.addAttribute("error", "No resident data available");
-                return "error"; // Return error page if no residents are found
-            }
-            for (Resident r : residents) {
-//                System.out.println("Resident Room No: " + r.getRoom_no());
-//                System.out.println("Resident Status: " + r.getStatus());
+                return "error";
             }
 
-            model.addAttribute("residents", residents); // Add the list of residents to the model
+            model.addAttribute("residents", residents);
 
             // Initialize formData for any specific resident update (if needed)
             model.addAttribute("formData", new HashMap<String, String>());
-            model.addAttribute("role", "admin"); // or dynamically fetched
+            model.addAttribute("role", "admin");
             model.addAttribute("requestURI", request.getRequestURI());
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return "admin/resident_details"; // Thymeleaf template for the details
+        return "admin/resident_details";
     }
 
     @PostMapping("/add_resident")
@@ -116,31 +128,28 @@ public class ResidentController {
         Integer sid = (Integer) session.getAttribute("adminSocietyId");
         Map<String, Object> response = new HashMap<>();
         try {
-            // Extract data from the formData
             Resident resident = new Resident();
-            resident.setSid(sid);
-            System.out.println("Sid: " + resident.getSid());
-            resident.setRoom_no(Integer.parseInt(formData.get("room_no")));
-            System.out.println("Room no: " + resident.getRoom_no());
-            resident.setMr_ms(formData.get("mr_ms"));
-            System.out.println("Mr_Ms: " + resident.getMr_ms());
-            resident.setName(formData.get("name"));
-            System.out.println("Name: " + resident.getName());
-            resident.setGender(formData.get("gender"));
-            System.out.println("Gender: " + resident.getGender());
             resident.setAge(Integer.parseInt(formData.get("age")));
-            resident.setContactNo(formData.get("contactNo"));
+            resident.setContact_no(formData.get("contact_no"));
             resident.setBhk(formData.get("bhk"));
-            System.out.println("BHK: " + resident.getBhk());
             resident.setEmail(formData.get("email"));
-            System.out.println("Email: " + resident.getEmail());
-//            resident.setStatus(formData.get("status"));
-//            System.out.println("Status: " + resident.getStatus());
+            resident.setIs_admin(false);
+            
+            boolean isTenant = Boolean.parseBoolean(formData.get("is_tenant"));
+            resident.setIs_tenant(isTenant);
+            if (isTenant) {
+                com.example.societyhub.model.Tenant tenant = new com.example.societyhub.model.Tenant();
+                tenant.setName(formData.get("tenant_name"));
+                tenant.setContact_no(formData.get("tenant_contact"));
+                tenant.setEmail(formData.get("tenant_email"));
+                tenant.setBill_type(formData.get("tenant_bill_type"));
+                resident.setTenant(tenant);
+            }
 
-            // Call service method to add the resident
-            dbHandler.addResident(resident); // Method to add the resident to the database
+            // Call service method to add the resident (now requires societyId)
+            dbHandler.addResident(resident, sid);
 
-            Log.info("Resident added: Name: " + resident.getName() + " Email: " + resident.getEmail());
+            Log.info("Resident added: Email: " + resident.getEmail());
 
             response.put("success", true);
             response.put("message", "Resident added successfully!");
@@ -148,7 +157,7 @@ public class ResidentController {
             response.put("success", false);
             response.put("error", "Error adding resident: " + e.getMessage());
         }
-        return response; // Return JSON response
+        return response;
     }
 
     @PostMapping("/delete_residents")
@@ -165,57 +174,42 @@ public class ResidentController {
                 return "Error deleting resident: " + e.getMessage();
             }
         }
-        return "success"; // Return success message
+        return "success";
     }
 
 
     @PostMapping("/update_resident")
     @ResponseBody
     public Map<String, Object> updateResident(@RequestBody Map<String, String> formData, HttpSession session) {
-        Integer sid = (Integer) session.getAttribute("adminSocietyId");
         Map<String, Object> response = new HashMap<>();
         try {
-            // Extract data from the formData
             Resident resident = new Resident();
-            resident.setSid(sid);
-            System.out.println("Sid: " + resident.getSid());
-            resident.setRoom_no(Integer.parseInt(formData.get("room_no")));
-            System.out.println("Room no: " + resident.getRoom_no());
-            resident.setMr_ms(formData.get("mr_ms"));
-            System.out.println("Mr_Ms: " + resident.getMr_ms());
-            resident.setName(formData.get("name"));
-            System.out.println("Name: " + resident.getName());
-            resident.setGender(formData.get("gender"));
-            System.out.println("Gender: " + resident.getGender());
             resident.setAge(Integer.parseInt(formData.get("age")));
-            resident.setContactNo(formData.get("contactNo"));
+            resident.setContact_no(formData.get("contact_no"));
             resident.setBhk(formData.get("bhk"));
-            System.out.println("BHK: " + resident.getBhk());
             resident.setEmail(formData.get("email"));
-            System.out.println("Email: " + resident.getEmail());
-            resident.setMonth(formData.get("month"));
-//            String month = resident.getMonth();
-//            String status = resident.getStatus();
-
-//            int flag = determineFlag(month, status);
-//            System.out.println("Month: " + resident.getMonth());
-//            resident.setStatus(formData.get("status"));
-//            System.out.println("Status: " + resident.getStatus());
             resident.setMygate_no(formData.get("mygate_no"));
             System.out.println("MyGate no: " + resident.getMygate_no());
-
-//            boolean statusValue = "Paid".equalsIgnoreCase(resident.getStatus()) || "Paid with fine".equalsIgnoreCase(resident.getStatus());
-//            String selectedMonth = resident.getMonth();
-//            dbHandler.updateResidentBill(resident.getMygate_no(), selectedMonth, statusValue);
+            
+            boolean isTenant = Boolean.parseBoolean(formData.get("is_tenant"));
+            resident.setIs_tenant(isTenant);
+            if (isTenant) {
+                com.example.societyhub.model.Tenant tenant = new com.example.societyhub.model.Tenant();
+                tenant.setName(formData.get("tenant_name"));
+                tenant.setContact_no(formData.get("tenant_contact"));
+                tenant.setEmail(formData.get("tenant_email"));
+                tenant.setBill_type(formData.get("tenant_bill_type"));
+                resident.setTenant(tenant);
+            }
 
             // Call service method to update the resident data
-            dbHandler.updateResident(resident); // Method to update the resident in the database
+            dbHandler.updateResident(resident);
 
             response.put("success", true);
-            response.put("message", "Resident added successfully!");
+            response.put("message", "Resident updated successfully!");
         } catch (Exception e) {
             response.put("success", false);
-            response.put("error", "Error adding resident: " + e.getMessage());
+            response.put("error", "Error updating resident: " + e.getMessage());
         }
         return response;
     }
@@ -236,72 +230,61 @@ public class ResidentController {
 
 
     @GetMapping("/generateResidentBill")
-    public String getResidentBill(@RequestParam(value = "month", required = false) String month, Model model, HttpSession session, HttpServletRequest request) throws SQLException {
+    public String getResidentBill(@RequestParam(value = "month", required = false) String month,
+                                  Model model, HttpSession session, HttpServletRequest request) throws SQLException {
         Integer sid = (Integer) session.getAttribute("adminSocietyId");
         System.out.println("Sid: " + sid);
 
         if (sid == null) {
             model.addAttribute("error", "Admin society ID not found");
-            return "error"; // Redirect to an error page or handle accordingly
+            return "error";
         }
 
         try {
-            // If month is null, set a default value
             if (month == null || month.isEmpty()) {
-                month = "January"; // Default month
+                month = "january";
             }
+            String monthLower = month.toLowerCase();
+            int year = LocalDate.now().getYear();
 
-            model.addAttribute("selectedMonth",
-                    month.substring(0,1).toUpperCase() + month.substring(1).toLowerCase());
-
-//            System.out.println("Selected Month: " + month); // Print selected month
+            String displayMonth = monthLower.substring(0,1).toUpperCase() + monthLower.substring(1);
+            model.addAttribute("selectedMonth", displayMonth);
 
             Society society = dbHandler.getSocietyBySid(sid);
             model.addAttribute("society_name", society.getName());
 
-            List<Resident> residents = dbHandler.getResidentBillDetails(month, sid); // Fetch residents for selected month
+            List<Resident> residents = dbHandler.getResident(sid);
 
             if (residents == null || residents.isEmpty()) {
                 model.addAttribute("error", "No resident data available");
-                return "error"; // Return error page if no residents are found
+                return "error";
             }
 
-            for (Resident r : residents) {
-                System.out.println("Helloooooooooooooooooooooooooooooooooooooooooooooo");
-                String statusString = r.getStatus();
-
-                if (statusString == null || statusString.isEmpty()) {
-                    System.out.println("Status is null or empty for Resident Room No: " + r.getRoom_no());
-                    continue; // Skip this iteration if status is invalid
-                }
-
+            // Populate each resident's billing status from unit_bill_record
+            for (Resident resident : residents) {
                 try {
-                    int statusValue = Integer.parseInt(statusString); // Get the status from the database (0, 1, or 2)
-                    System.out.println("Status:::::::::::::::::: " + statusValue);
-
-                    // Display the corresponding text based on the status
-                    String status = switch (statusValue) {
-                        case 0 -> "Unpaid";
-                        case 1 -> "Paid";
-                        case 2 -> "Paid_with_fine";
-                        default -> "Unknown Status";
-                    };
-
-                    // Debugging output
-//                    System.out.println("Resident Room No: " + r.getRoom_no());
-//                    System.out.println("Resident Month: " + r.getMonth());
-//                    System.out.println("Resident Status: " + status);
-                    r.setStatus(status);
-
-                } catch (NumberFormatException e) {
-                    System.out.println("Failed to parse status for Resident Room No: " + r.getRoom_no() + ", status: " + r.getStatus());
+                    Flat flat = flatService.getFlatByMygate(resident.getMygate_no());
+                    if (flat != null) {
+                        com.example.societyhub.model.UnitBillRecord ubr =
+                                billingService.getUnitBillRecordByFlat(flat.getFlat_id(), monthLower, year);
+                        if (ubr != null && ubr.getStatus() != null) {
+                            // Convert DB status (PAID/UNPAID/PAID_WITH_FINE) to display format
+                            String dbStatus = ubr.getStatus().toUpperCase();
+                            if ("PAID".equals(dbStatus))            resident.setStatus("Paid");
+                            else if ("PAID_WITH_FINE".equals(dbStatus)) resident.setStatus("Paid_with_fine");
+                            else                                         resident.setStatus("Unpaid");
+                        } else {
+                            resident.setStatus("Unpaid");
+                        }
+                    }
+                } catch (Exception e) {
+                    resident.setStatus("Unpaid"); // safe default
                 }
             }
 
-
-            model.addAttribute("residents", residents); // Add the list of residents to the model
-            model.addAttribute("formData", new HashMap<String, String>()); // Initialize formData
-            model.addAttribute("role", "admin"); // or dynamically fetched
+            model.addAttribute("residents", residents);
+            model.addAttribute("formData", new HashMap<String, String>());
+            model.addAttribute("role", "admin");
             model.addAttribute("requestURI", request.getRequestURI());
 
         } catch (SQLException e) {
@@ -318,36 +301,29 @@ public class ResidentController {
         Integer sid = (Integer) session.getAttribute("adminSocietyId");
         Map<String, Object> response = new HashMap<>();
         try {
-            // Extract data from the formData
-            Resident resident = new Resident();
-            resident.setSid(sid);
-            System.out.println("Sid: " + resident.getSid());
-//            resident.setRoom_no(Integer.parseInt(formData.get("room_no")));
-//            System.out.println("Room no: " + resident.getRoom_no());
-//            resident.setName(formData.get("name"));
-//            System.out.println("Name: " + resident.getName());
-//            resident.setEmail(formData.get("email"));
-//            System.out.println("Email: " + resident.getEmail());
-            resident.setMonth(formData.get("month"));
-            String month = resident.getMonth();
-//            String status = resident.getStatus();
+            String month = formData.get("month");
+            String status = formData.get("status").replace(" ", "_");
+            String mygateNo = formData.get("mygate_no");
 
-
-
-            System.out.println("Month: " + resident.getMonth());
-            resident.setStatus(formData.get("status"));
-            String status = resident.getStatus().replace(" ", "_");
-            System.out.println("Statusssssssssssssssssssssssss: " + status);
-            int flag = determineFlag(month, status);
-            System.out.println("Flag: " + flag);
+            System.out.println("Month: " + month);
             System.out.println("Status: " + status);
-            resident.setMygate_no(formData.get("mygate_no"));
-            System.out.println("MyGate no: " + resident.getMygate_no());
+            System.out.println("MyGate no: " + mygateNo);
 
-//            boolean statusValue = "Paid".equalsIgnoreCase(resident.getStatus()) || "Paid_with_fine".equalsIgnoreCase(resident.getStatus());
-            String selectedMonth = resident.getMonth();
             int currentYear = LocalDate.now().getYear();
-            dbHandler.updateResidentBill(resident.getMygate_no(), currentYear, selectedMonth, flag);
+            
+            Flat flat = flatService.getFlatByMygate(mygateNo);
+            if (flat != null) {
+                com.example.societyhub.model.UnitBillRecord ubr = billingService.getUnitBillRecordByFlat(flat.getFlat_id(), month.toLowerCase(), currentYear);
+                if (ubr != null) {
+                    if ("Paid".equalsIgnoreCase(status)) {
+                        billingService.markAsPaid(ubr.getId());
+                    } else if ("Paid_with_fine".equalsIgnoreCase(status)) {
+                        billingService.markAsPaidWithFine(ubr.getId(), java.math.BigDecimal.ZERO);
+                    } else {
+                        billingService.markAsUnpaid(ubr.getId());
+                    }
+                }
+            }
 
             response.put("success", true);
             response.put("message", "Resident status updated successfully!");
@@ -373,7 +349,7 @@ public class ResidentController {
 
         try {
 
-            // 1️⃣ Fetch resident from DB
+            // 1. Fetch resident from DB
             Resident resident = dbHandler.getResident(mygateNo);
 
             if (resident == null) {
@@ -381,24 +357,29 @@ public class ResidentController {
                 return "error";
             }
 
-            // 2️⃣ Create complaint
+            // 2. Get flat info for society_id and flat_no
+            Flat flat = flatService.getFlatByMygate(mygateNo);
+
+            // 3. Create complaint
             Complaint complaint = new Complaint();
-            complaint.setSocietyId(resident.getSid());
-            complaint.setResidentName(resident.getName());
-            complaint.setFlatNo(String.valueOf(resident.getRoom_no()));
+            complaint.setSocietyId(flat != null ? flat.getSociety_id() : 0);
+            complaint.setResidentName(resident.getMem_id()); // Using mem_id as identifier since name is no longer on Resident
+            complaint.setFlatNo(flat != null ? flat.getFlat_no() : "N/A");
             complaint.setSubject(subject);
             complaint.setDescription(description);
             complaint.setStatus("PENDING");
             complaint.setCreatedAt(LocalDateTime.now());
 
-            // 3️⃣ Save to DB
+            // 4. Save to DB
             dbHandler.saveComplaint(complaint);
 
-            // 4️⃣ Reload dashboard data
+            // 5. Reload dashboard data
             model.addAttribute("resident", resident);
-            List<Announcement> announcements =
-                    dbHandler.getAnnouncement(resident.getSid());
-            model.addAttribute("announcements", announcements);
+            if (flat != null) {
+                List<Announcement> announcements =
+                        dbHandler.getAnnouncement(flat.getSociety_id());
+                model.addAttribute("announcements", announcements);
+            }
 
             model.addAttribute("message", "Complaint submitted successfully.");
 
@@ -427,31 +408,22 @@ public class ResidentController {
                 (List<String>) payload.get("residents");
 
         for(String mygateNo : residents){
-
-            int flag = determineFlag(month, status);
-
             int year = LocalDate.now().getYear();
-
-            dbHandler.updateResidentBill(
-                    mygateNo,
-                    year,
-                    month,
-                    flag
-            );
+            Flat flat = flatService.getFlatByMygate(mygateNo);
+            if (flat != null) {
+                com.example.societyhub.model.UnitBillRecord ubr = billingService.getUnitBillRecordByFlat(flat.getFlat_id(), month.toLowerCase(), year);
+                if (ubr != null) {
+                    if ("Paid".equalsIgnoreCase(status)) {
+                        billingService.markAsPaid(ubr.getId());
+                    } else if ("Paid_with_fine".equalsIgnoreCase(status)) {
+                        billingService.markAsPaidWithFine(ubr.getId(), java.math.BigDecimal.ZERO);
+                    } else {
+                        billingService.markAsUnpaid(ubr.getId());
+                    }
+                }
+            }
         }
 
         return Map.of("message","Updated");
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-

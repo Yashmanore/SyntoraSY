@@ -19,7 +19,7 @@ public class PdfService {
         this.thymeleafViewResolver = thymeleafViewResolver;
     }
 
-    public byte[] generatePdf(String template, Map<String, String> data)
+    public byte[] generatePdf(String template, Map<String, Object> data)
             throws Exception {
 
         Context context = new Context();

@@ -88,7 +88,8 @@ public class EmailController {
                     requestBody.get("mygate_no"),
                     requestBody.get("selectedMonth"),
                     requestBody.get("status"),
-                    sid
+                    sid,
+                    requestBody.get("email")
             );
 
             return ResponseEntity.ok(
@@ -216,11 +217,14 @@ public class EmailController {
             String mygateNo = resident.get("mygate_no");
             String status = resident.get("status");
 
+            String email = resident.get("email");
+
             orchestrationService.sendReceipt(
                     mygateNo,
                     month,
                     status,
-                    sid
+                    sid,
+                    email
             );
         }
 

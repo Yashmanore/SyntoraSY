@@ -4,114 +4,112 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resident Details</title>
-
-    <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-
-    <!-- Sidebar CSS -->
     <th:block th:replace="fragments/sidebar :: sidebar-css"></th:block>
 
     <style>
-        body {
-            font-family: Inter, Arial, sans-serif;
-            background: #f5f7fb;
-            margin: 0;
-        }
+        body { font-family: Inter, Arial, sans-serif; background: #f5f7fb; margin: 0; }
+        .main-content { margin-left: 240px; padding: 24px; }
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .page-header h2 { font-weight: 600; margin: 0; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
+        .btn-primary { background: #2563eb; border: none; }
+        .btn-danger { background: #dc2626; border: none; }
+        table { font-size: 14px; }
+        thead th { background: #f9fafb; font-weight: 600; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+        tbody tr:hover { background: #eef3f9; }
+        td input, td select { width: 100%; border: none; background: #f9fafb; padding: 6px; border-radius: 6px; }
+        input[readonly], select:disabled { color: #374151; }
+        .btn-edit { background: #2563eb; color: #fff; border-radius: 6px; padding: 6px 12px; border: none; }
+        .btn-edit:hover { background: #1d4ed8; }
 
-        /* Main content */
-        .main-content {
-            margin-left: 240px;
-            padding: 24px;
+        /* Tenant badge */
+        .tenant-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
         }
+        .tenant-badge.is-tenant { background: #ede9fe; color: #6d28d9; }
+        .tenant-badge.not-tenant { background: #f3f4f6; color: #6b7280; }
 
-        /* Page header */
-        .page-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
+        .btn-tenant-details {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: #ede9fe; color: #6d28d9; border: none;
+            border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: background .2s;
         }
+        .btn-tenant-details:hover { background: #ddd6fe; }
 
-        .page-header h2 {
-            font-weight: 600;
-            margin: 0;
+        /* Tenant Modal */
+        .tenant-modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15,23,42,.45); backdrop-filter: blur(4px);
+            z-index: 1055; align-items: center; justify-content: center;
         }
+        .tenant-modal-overlay.show { display: flex; }
+        .tenant-modal {
+            background: #fff; border-radius: 20px; padding: 32px;
+            width: 480px; max-width: 95vw;
+            box-shadow: 0 25px 60px rgba(0,0,0,.18);
+            animation: modalIn .25s cubic-bezier(.34,1.56,.64,1);
+        }
+        @keyframes modalIn {
+            from { opacity:0; transform:translateY(24px) scale(.97); }
+            to   { opacity:1; transform:translateY(0) scale(1); }
+        }
+        .tenant-modal-header {
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
+        }
+        .tenant-modal-title {
+            font-size: 18px; font-weight: 700; color: #1e1b4b;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .tenant-modal-title .icon-wrap {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px;
+        }
+        .modal-close-btn {
+            background: #f3f4f6; border: none; border-radius: 8px;
+            width: 32px; height: 32px; cursor: pointer; font-size: 16px;
+            display: flex; align-items: center; justify-content: center; color: #6b7280;
+        }
+        .modal-close-btn:hover { background: #e5e7eb; color: #111; }
+        .tenant-modal .form-label { font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+        .tenant-modal .form-control, .tenant-modal .form-select {
+            border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 10px 14px;
+            font-size: 14px; color: #1f2937; transition: border .2s, box-shadow .2s;
+        }
+        .tenant-modal .form-control:focus, .tenant-modal .form-select:focus {
+            border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.12); outline: none;
+        }
+        .tenant-modal .form-control[readonly], .tenant-modal .form-select:disabled {
+            background: #f9fafb; cursor: default;
+        }
+        .modal-footer-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+        .btn-modal-save {
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            color: #fff; border: none; border-radius: 10px; padding: 10px 24px;
+            font-weight: 600; cursor: pointer; transition: opacity .2s;
+        }
+        .btn-modal-save:hover { opacity: .9; }
+        .btn-modal-cancel {
+            background: #f3f4f6; color: #374151; border: none;
+            border-radius: 10px; padding: 10px 20px; font-weight: 600; cursor: pointer;
+        }
+        .btn-modal-cancel:hover { background: #e5e7eb; }
 
-        /* Card container */
-        .card {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.06);
-        }
-
-        /* Action buttons */
-        .btn-primary {
-            background: #2563eb;
-            border: none;
-        }
-
-        .btn-danger {
-            background: #dc2626;
-            border: none;
-        }
-
-        /* Table */
-        table {
-            font-size: 14px;
-        }
-
-        thead th {
-            background: #f9fafb;
-            font-weight: 600;
-            border-bottom: 1px solid #e5e7eb;
-            white-space: nowrap;
-        }
-
-        tbody tr:hover {
-            background: #eef3f9;
-        }
-
-        td input,
-        td select {
-            width: 100%;
-            border: none;
-            background: #f9fafb;
-            padding: 6px;
-            border-radius: 6px;
-        }
-
-        input[readonly],
-        select:disabled {
-            color: #374151;
-        }
-
-        /* Edit button */
-        .btn-edit {
-            background: #2563eb;
-            color: #fff;
-            border-radius: 6px;
-            padding: 6px 12px;
-            border: none;
-        }
-
-        .btn-edit:hover {
-            background: #274f75;
-        }
+        /* Tenant checkbox toggle in edit mode */
+        .tenant-cell { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     </style>
 </head>
-
 <body>
 
-<!-- Sidebar -->
 <th:block th:replace="fragments/sidebar :: sidebar('admin')"></th:block>
 
 <div class="main-content">
-
-    <!-- Header -->
     <div class="page-header">
         <h2 th:text="${society_name}">Society Name</h2>
-
         <div class="d-flex gap-2">
             <button class="btn btn-primary" id="addResidentBtn">
                 <i class="bi bi-plus-circle"></i> Add Resident
@@ -122,49 +120,70 @@
         </div>
     </div>
 
-    <!-- Table Card -->
     <div class="card shadow-sm">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead>
                 <tr>
-                    <th>Select</th>
-                    <th>#</th>
-                    <th>MyGate No</th>
-                    <th>Room</th>
-                    <th>BHK</th>
-                    <th>Mr/Ms</th>
-                    <th>Name</th>
-                    <th>Gender</th>
-                    <th>Age</th>
-                    <th>Email</th>
-                    <th>Contact</th>
-                    <th>Action</th>
+                    <th>Select</th><th>#</th><th>MyGate No</th><th>Room</th><th>BHK</th>
+                    <th>Mr/Ms</th><th>Name</th><th>Gender</th><th>Age</th>
+                    <th>Email</th><th>Contact</th><th>Is Tenant?</th><th>Action</th>
                 </tr>
                 </thead>
-
                 <tbody id="residentTableBody">
-                <tr th:each="resident, stat : ${residents}">
+                <tr th:each="resident, stat : ${residents}"
+                    th:attr="
+                        data-tenant-name=${resident.tenant?.name},
+                        data-tenant-contact=${resident.tenant?.contact_no},
+                        data-tenant-email=${resident.tenant?.email},
+                        data-tenant-billtype=${resident.tenant?.bill_type}">
                     <td><input type="checkbox"></td>
                     <td th:text="${stat.index + 1}"></td>
-
                     <td><input th:value="${resident.mygate_no}" data-mygate="true" readonly></td>
                     <td><input th:value="${resident.room_no}" data-room_no="true" readonly></td>
                     <td><input th:value="${resident.bhk}" data-bhk="true" readonly></td>
-
                     <td>
                         <select data-mr_ms="true" disabled>
                             <option th:selected="${resident.mr_ms=='Mr.'}">Mr.</option>
                             <option th:selected="${resident.mr_ms=='Ms.'}">Ms.</option>
                         </select>
                     </td>
-
                     <td><input th:value="${resident.name}" data-name="true" readonly></td>
                     <td><input th:value="${resident.gender}" data-gender="true" readonly></td>
                     <td><input th:value="${resident.age}" data-age="true" readonly></td>
                     <td><input th:value="${resident.email}" data-email="true" readonly></td>
-                    <td><input th:value="${resident.contactNo}" data-contactNo="true" readonly></td>
-
+                    <td><input th:value="${resident.contact_no}" data-contactNo="true" readonly></td>
+                    <td>
+                        <div class="tenant-cell">
+                            <!-- Read-only view: badge + details button -->
+                            <span class="tenant-view">
+                                <span th:if="${resident.is_tenant}" class="tenant-badge is-tenant">
+                                    <i class="bi bi-person-badge"></i> Tenant
+                                </span>
+                                <span th:unless="${resident.is_tenant}" class="tenant-badge not-tenant">
+                                    <i class="bi bi-house"></i> Owner
+                                </span>
+                                <button th:if="${resident.is_tenant}"
+                                        class="btn-tenant-details ms-1"
+                                        onclick="openTenantModal(this.closest('tr'), false)">
+                                    <i class="bi bi-eye"></i> Details
+                                </button>
+                            </span>
+                            <!-- Edit mode: checkbox + edit-details button -->
+                            <span class="tenant-edit" style="display:none;">
+                                <input type="checkbox" data-istenant="true"
+                                       th:checked="${resident.is_tenant}"
+                                       style="width:auto;"
+                                       onchange="onTenantCheckboxChange(this)">
+                                <label style="font-size:13px; margin:0;">Is Tenant</label>
+                                <button class="btn-tenant-details ms-1"
+                                        th:style="${resident.is_tenant ? '' : 'display:none;'}"
+                                        onclick="openTenantModal(this.closest('tr'), true)">
+                                    <i class="bi bi-pencil"></i> Edit Details
+                                </button>
+                            </span>
+                        </div>
+                    </td>
                     <td>
                         <button class="btn-edit" onclick="toggleEdit(this)">Edit</button>
                     </td>
@@ -175,205 +194,319 @@
     </div>
 </div>
 
+<!-- ===== Tenant Details Modal ===== -->
+<div class="tenant-modal-overlay" id="tenantModalOverlay">
+    <div class="tenant-modal">
+        <div class="tenant-modal-header">
+            <div class="tenant-modal-title">
+                <div class="icon-wrap"><i class="bi bi-person-badge"></i></div>
+                Tenant Details
+            </div>
+            <button class="modal-close-btn" onclick="closeTenantModal()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label">Tenant Name</label>
+                <input type="text" id="modalTenantName" class="form-control" placeholder="Enter tenant name">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Contact Number</label>
+                <input type="text" id="modalTenantContact" class="form-control" placeholder="Enter contact number">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Email Address</label>
+                <input type="email" id="modalTenantEmail" class="form-control" placeholder="Enter email">
+            </div>
+            <div class="col-12">
+                <label class="form-label">Bill Type</label>
+                <select id="modalTenantBillType" class="form-select">
+                    <option value="ALL">All (Tenant + Rental)</option>
+                    <option value="TENANT">Tenant</option>
+                    <option value="RENTAL">Rental</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="modal-footer-actions">
+            <button class="btn-modal-cancel" onclick="closeTenantModal()">Cancel</button>
+            <button class="btn-modal-save" id="modalSaveBtn" onclick="saveTenantModal()">
+                <i class="bi bi-check2"></i> Save Details
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-    // Function to toggle between editable and non-editable states
-    function toggleEdit(button) {
-        const row = button.closest('tr');
-        const inputs = row.querySelectorAll('input');
-        const selects = row.querySelectorAll('select');
+    // ── Modal state ──────────────────────────────────────────────────────────
+    let _activeRow = null;
+    let _modalEditable = false;
 
-        // Toggle the 'readonly' and 'disabled' attributes
-        inputs.forEach(input => {
-            if (!input.hasAttribute('data-mygate')) {
-                if (input.hasAttribute('readonly')) {
-                    input.removeAttribute('readonly');
-                    input.style.backgroundColor = '#ffffff';
-                } else {
-                    input.setAttribute('readonly', true);
-                    input.style.backgroundColor = '#f7f7f7';
-                }
-            }
+    function openTenantModal(row, editable) {
+        _activeRow = row;
+        _modalEditable = editable;
+
+        const name    = row.dataset.tenantName    || '';
+        const contact = row.dataset.tenantContact || '';
+        const email   = row.dataset.tenantEmail   || '';
+        const bill    = row.dataset.tenantBilltype || 'ALL';
+
+        document.getElementById('modalTenantName').value    = name;
+        document.getElementById('modalTenantContact').value = contact;
+        document.getElementById('modalTenantEmail').value   = email;
+        document.getElementById('modalTenantBillType').value = bill;
+
+        const readonly = !editable;
+        ['modalTenantName','modalTenantContact','modalTenantEmail'].forEach(id => {
+            document.getElementById(id).readOnly = readonly;
         });
+        document.getElementById('modalTenantBillType').disabled = readonly;
+        document.getElementById('modalSaveBtn').style.display = editable ? '' : 'none';
 
-        selects.forEach(select => {
-            if (select.hasAttribute('disabled')) {
-                select.removeAttribute('disabled');
-                select.style.backgroundColor = '#ffffff';
-            } else {
-                select.setAttribute('disabled', true);
-                select.style.backgroundColor = '#f7f7f7';
-            }
-        });
+        document.getElementById('tenantModalOverlay').classList.add('show');
+    }
 
-        // Toggle button text between "Edit" and "Save"
-        button.textContent = button.textContent === 'Save' ? 'Edit' : 'Save';
+    function closeTenantModal() {
+        document.getElementById('tenantModalOverlay').classList.remove('show');
+        _activeRow = null;
+    }
 
-        // If saving, update resident data
-        if (button.textContent === 'Edit') {
-            const residentData = {
-                mygate_no: row.querySelector("input[data-mygate='true']").value,
-                room_no: row.querySelector("input[data-room_no='true']").value,
-                bhk: row.querySelector("input[data-bhk='true']").value,
-                mr_ms: row.querySelector("select[data-mr_ms='true']").value,
-                name: row.querySelector("input[data-name='true']").value,
-                gender: row.querySelector("input[data-gender='true']").value,
-                age: row.querySelector("input[data-age='true']").value,
-                email: row.querySelector("input[data-email='true']").value,
-                contactNo: row.querySelector("input[data-contactNo='true']").value,
+    function saveTenantModal() {
+        if (!_activeRow) return;
+        _activeRow.dataset.tenantName    = document.getElementById('modalTenantName').value;
+        _activeRow.dataset.tenantContact = document.getElementById('modalTenantContact').value;
+        _activeRow.dataset.tenantEmail   = document.getElementById('modalTenantEmail').value;
+        _activeRow.dataset.tenantBilltype = document.getElementById('modalTenantBillType').value;
+        closeTenantModal();
+    }
 
-            };
+    // Close on overlay click
+    document.getElementById('tenantModalOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeTenantModal();
+    });
 
-            console.log(residentData);
-
-            // Send the updated data to the backend with a POST request
-            fetch('/api/update_resident', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(residentData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Resident updated successfully!');
-                    button.textContent = 'Edit'; // Toggle back to Edit
-                    inputs.forEach(input => input.setAttribute('readonly', true));
-                    selects.forEach(select => select.setAttribute('disabled', true));
-                } else {
-                    alert('Error updating resident: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error updating resident: ' + error);
-            });
+    // ── When tenant checkbox toggles in edit mode ────────────────────────────
+    function onTenantCheckboxChange(checkbox) {
+        const editBtn = checkbox.closest('.tenant-edit').querySelector('.btn-tenant-details');
+        if (checkbox.checked) {
+            editBtn.style.display = '';
+            openTenantModal(checkbox.closest('tr'), true);
+        } else {
+            editBtn.style.display = 'none';
+            // clear tenant data
+            const row = checkbox.closest('tr');
+            row.dataset.tenantName = '';
+            row.dataset.tenantContact = '';
+            row.dataset.tenantEmail = '';
+            row.dataset.tenantBilltype = '';
         }
     }
 
-    // Function to add a new row (resident) to the table
+    // ── Toggle Edit / Save ────────────────────────────────────────────────────
+    function toggleEdit(button) {
+        const row     = button.closest('tr');
+        const inputs  = row.querySelectorAll('input:not([data-istenant])');
+        const selects = row.querySelectorAll('select:not([data-tenantbilltype])');
+        const viewSpan = row.querySelector('.tenant-view');
+        const editSpan = row.querySelector('.tenant-edit');
+
+        const entering = button.textContent.trim() === 'Edit';
+
+        // Toggle fields
+        inputs.forEach(input => {
+            if (input.hasAttribute('data-mygate')) return;
+            if (entering) {
+                input.removeAttribute('readonly');
+                input.removeAttribute('disabled');
+                if (input.type !== 'checkbox') input.style.backgroundColor = '#fff';
+            } else {
+                if (input.type !== 'checkbox') input.setAttribute('readonly', true);
+                else input.setAttribute('disabled', true);
+                if (input.type !== 'checkbox') input.style.backgroundColor = '#f9fafb';
+            }
+        });
+        selects.forEach(select => {
+            if (entering) {
+                select.removeAttribute('disabled');
+                select.style.backgroundColor = '#fff';
+            } else {
+                select.setAttribute('disabled', true);
+                select.style.backgroundColor = '#f9fafb';
+            }
+        });
+
+        if (entering) {
+            viewSpan.style.display = 'none';
+            editSpan.style.display = '';
+            button.textContent = 'Save';
+        } else {
+            // ── SAVE ──
+            const isTenant = row.querySelector("input[data-istenant='true']").checked;
+            const residentData = {
+                mygate_no:        row.querySelector("input[data-mygate='true']").value,
+                room_no:          row.querySelector("input[data-room_no='true']").value,
+                bhk:              row.querySelector("input[data-bhk='true']").value,
+                mr_ms:            row.querySelector("select[data-mr_ms='true']").value,
+                name:             row.querySelector("input[data-name='true']").value,
+                gender:           row.querySelector("input[data-gender='true']").value,
+                age:              row.querySelector("input[data-age='true']").value,
+                email:            row.querySelector("input[data-email='true']").value,
+                contact_no:       row.querySelector("input[data-contactNo='true']").value,
+                is_tenant:        String(isTenant),
+                tenant_name:      row.dataset.tenantName    || '',
+                tenant_contact:   row.dataset.tenantContact || '',
+                tenant_email:     row.dataset.tenantEmail   || '',
+                tenant_bill_type: row.dataset.tenantBilltype || ''
+            };
+
+            fetch('/api/update_resident', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(residentData)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    // update badge
+                    viewSpan.innerHTML = isTenant
+                        ? `<span class="tenant-badge is-tenant"><i class="bi bi-person-badge"></i> Tenant</span>
+                           <button class="btn-tenant-details ms-1" onclick="openTenantModal(this.closest('tr'), false)">
+                             <i class="bi bi-eye"></i> Details
+                           </button>`
+                        : `<span class="tenant-badge not-tenant"><i class="bi bi-house"></i> Owner</span>`;
+
+                    viewSpan.style.display = '';
+                    editSpan.style.display = 'none';
+                    button.textContent = 'Edit';
+                    inputs.forEach(i => { if(i.type!=='checkbox') i.setAttribute('readonly', true); });
+                    selects.forEach(s => s.setAttribute('disabled', true));
+                } else {
+                    alert('Error updating resident: ' + data.error);
+                    // revert button
+                    button.textContent = 'Save';
+                }
+            })
+            .catch(err => { alert('Error: ' + err); button.textContent = 'Save'; });
+        }
+    }
+
+    // ── Add Resident ──────────────────────────────────────────────────────────
     document.getElementById('addResidentBtn').addEventListener('click', function() {
         const tableBody = document.getElementById('residentTableBody');
         const newRow = document.createElement('tr');
+        newRow.dataset.tenantName = '';
+        newRow.dataset.tenantContact = '';
+        newRow.dataset.tenantEmail = '';
+        newRow.dataset.tenantBilltype = '';
 
         newRow.innerHTML = `
             <td><input type="checkbox"></td>
             <td>${tableBody.rows.length + 1}</td>
-            <td><input type="text" placeholder="MyGate No" readonly></td>
-            <td><input type="text" placeholder="Room No"></td>
-            <td><input type="text" placeholder="BHK"></td>
+            <td><input type="text" placeholder="MyGate No" data-mygate="true" readonly></td>
+            <td><input type="text" placeholder="Room No" data-room_no="true"></td>
+            <td><input type="text" placeholder="BHK" data-bhk="true"></td>
             <td>
                 <select data-mr_ms="true">
-                    <option>Mr.</option>
-                    <option>Ms.</option>
+                    <option>Mr.</option><option>Ms.</option>
                 </select>
             </td>
-            <td><input type="text" placeholder="Name"></td>
-            <td><input type="text" placeholder="Gender"></td>
-            <td><input type="number" placeholder="Age"></td>
-            <td><input type="email" placeholder="Email"></td>
-            <td><input type="text" placeholder="Contact No"></td>
+            <td><input type="text" placeholder="Name" data-name="true"></td>
+            <td><input type="text" placeholder="Gender" data-gender="true"></td>
+            <td><input type="number" placeholder="Age" data-age="true"></td>
+            <td><input type="email" placeholder="Email" data-email="true"></td>
+            <td><input type="text" placeholder="Contact No" data-contactNo="true"></td>
             <td>
-                <button class="toggle-btn" onclick="toggleAdd(this)">Save</button>
+                <div class="tenant-cell">
+                    <span class="tenant-edit" style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" data-istenant="true" style="width:auto;"
+                               onchange="onTenantCheckboxChange(this)">
+                        <label style="font-size:13px; margin:0;">Is Tenant</label>
+                        <button class="btn-tenant-details" style="display:none;"
+                                onclick="openTenantModal(this.closest('tr'), true)">
+                            <i class="bi bi-pencil"></i> Details
+                        </button>
+                    </span>
+                </div>
+            </td>
+            <td>
+                <button class="toggle-btn btn btn-primary btn-sm" onclick="saveNewResident(this)">Save</button>
             </td>
         `;
-
         tableBody.appendChild(newRow);
-        updateSerialNumbers(); // Update serial numbers after adding a row
+        updateSerialNumbers();
     });
 
-    // Function to toggle between editable and non-editable states and save the new resident
-    function toggleAdd(button) {
+    function saveNewResident(button) {
         const row = button.closest('tr');
-        const inputs = row.querySelectorAll('input');
-        const selects = row.querySelectorAll('select');
-
-        // Collect the resident data
+        const isTenant = row.querySelector("input[data-istenant='true']").checked;
         const residentData = {
-            room_no: row.querySelector('input[placeholder="Room No"]').value,
-            bhk: row.querySelector('input[placeholder="BHK"]').value,
-            mr_ms: row.querySelector('select').value,
-            name: row.querySelector('input[placeholder="Name"]').value,
-            gender: row.querySelector('input[placeholder="Gender"]').value,
-            age: row.querySelector('input[placeholder="Age"]').value,
-            email: row.querySelector('input[placeholder="Email"]').value,
-            contactNo: row.querySelector('input[placeholder="Contact No"]').value,
-
+            room_no:          row.querySelector("input[data-room_no='true']").value,
+            bhk:              row.querySelector("input[data-bhk='true']").value,
+            mr_ms:            row.querySelector("select[data-mr_ms='true']").value,
+            name:             row.querySelector("input[data-name='true']").value,
+            gender:           row.querySelector("input[data-gender='true']").value,
+            age:              row.querySelector("input[data-age='true']").value,
+            email:            row.querySelector("input[data-email='true']").value,
+            contact_no:       row.querySelector("input[data-contactNo='true']").value,
+            is_tenant:        String(isTenant),
+            tenant_name:      row.dataset.tenantName    || '',
+            tenant_contact:   row.dataset.tenantContact || '',
+            tenant_email:     row.dataset.tenantEmail   || '',
+            tenant_bill_type: row.dataset.tenantBilltype || ''
         };
 
-        // Send the new resident data to the backend with a POST request
         fetch('/api/add_resident', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(residentData)
         })
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
             if (data.success) {
                 alert('Resident added successfully!');
-                button.textContent = 'Edit'; // Toggle back to Edit
-                inputs.forEach(input => input.setAttribute('readonly', true));
-                selects.forEach(select => select.setAttribute('disabled', true));
-                updateSerialNumbers(); // Update serial numbers after adding
+                updateSerialNumbers();
             } else {
                 alert('Error adding resident: ' + data.error);
             }
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error adding resident: ' + error);
-        });
+        .catch(err => alert('Error: ' + err));
     }
 
-    // Function to update serial numbers
     function updateSerialNumbers() {
-        const rows = document.querySelectorAll('#residentTableBody tr');
-        rows.forEach((row, index) => {
-            row.cells[1].textContent = index + 1; // Update the serial number
+        document.querySelectorAll('#residentTableBody tr').forEach((row, i) => {
+            row.cells[1].textContent = i + 1;
         });
     }
 
-    // Delete Resident Button Click Event
+    // ── Delete ────────────────────────────────────────────────────────────────
     document.getElementById("deleteResidentBtn").addEventListener("click", function() {
-        const checkedBoxes = document.querySelectorAll("#residentTableBody input[type='checkbox']:checked");
-        if (checkedBoxes.length === 0) {
-            alert('Please select at least one resident to delete.');
-            return;
-        }
+        const checked = document.querySelectorAll("#residentTableBody input[type='checkbox']:checked");
+        if (checked.length === 0) { alert('Please select at least one resident to delete.'); return; }
         const mygateNos = [];
-        checkedBoxes.forEach(function(checkbox) {
-            const row = checkbox.closest('tr');
-            const mygateNo = row.querySelector("input[data-mygate='true']").value;
-            mygateNos.push(mygateNo);
+        checked.forEach(cb => {
+            const mygateInput = cb.closest('tr').querySelector("input[data-mygate='true']");
+            if (mygateInput) mygateNos.push(mygateInput.value);
         });
         fetch('/api/delete_residents', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mygateNos })
         })
-        .then(response => response.text())
+        .then(r => r.text())
         .then(data => {
             if (data === 'success') {
-                alert('Selected residents deleted successfully!');
-                checkedBoxes.forEach(checkbox => {
-                    checkbox.closest('tr').remove();
-                });
+                alert('Deleted successfully!');
+                checked.forEach(cb => cb.closest('tr').remove());
+                updateSerialNumbers();
             } else {
                 alert('Error deleting residents');
             }
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error deleting residents');
-        });
+        .catch(err => alert('Error: ' + err));
     });
-
 </script>
 </body>
 </html>

@@ -3,13 +3,10 @@ package com.example.societyhub.model;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Setter
 @Getter
 public class Society {
-    // Getters and setters
-    private int sid;
+    private Integer sid;          // PK
     private String name;
     private String street;
     private String landmark;
@@ -18,8 +15,6 @@ public class Society {
     private String city;
     private String state;
     private String country;
-    private int admin_id;
-    private List<Resident> residents; // Add residents list
-    private Bill bills; // Add bills list
-    private List<Admin> admins;
+    private Integer admin_id;
+    private Boolean data_uploaded; // new field from schema
 }

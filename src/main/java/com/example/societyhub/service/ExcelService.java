@@ -42,6 +42,8 @@ public class ExcelService {
 
             validateSociety(conn, societySid);
 
+            // In the new schema, admin info is determined differently.
+            // We still need to identify admin rows for the update-vs-insert logic.
             String[] adminData = getAdminInfo(conn, societySid);
             String adminName = adminData[0];
             String adminContact = adminData[1];
@@ -50,13 +52,23 @@ public class ExcelService {
 
             XSSFSheet sheet = workbook.getSheetAt(0);
 
+            // New schema: resident table only has (mem_id, age, contact_no, is_admin, mygate_no, bhk, email, password)
+            // Flat-level data (flat_no, society_id, etc.) goes into the flat table.
             try (PreparedStatement updateAdminStmt =
                          conn.prepareStatement(
-                                 "UPDATE resident SET room_no=?, mr_ms=?, gender=?, age=?, mygate_no=?, email=?, bhk=? WHERE name=? AND contact_no=? AND sid=?");
+                                 "UPDATE resident SET age=?, mygate_no=?, email=?, bhk=?, is_tenant=?, tenant_id=? WHERE contact_no=? AND isadmin=true");
 
                  PreparedStatement insertResidentStmt =
                          conn.prepareStatement(
-                                 "INSERT INTO resident (mem_id, sid, name, room_no, mr_ms, gender, age, contact_no, isadmin, mygate_no, bhk, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, false, ?, ?, ?)");
+                                 "INSERT INTO resident (mem_id, age, contact_no, isadmin, mygate_no, bhk, email, name, sid, is_tenant, tenant_id) VALUES (?, ?, ?, false, ?, ?, ?, ?, ?, ?, ?)");
+
+                 PreparedStatement insertFlatStmt =
+                         conn.prepareStatement(
+                                 "INSERT INTO flat (flat_no, society_id, owner_mem_id, occupancy_type, mygate_no) VALUES (?, ?, ?, ?, ?)");
+
+                 PreparedStatement insertTenantStmt =
+                         conn.prepareStatement(
+                                 "INSERT INTO tenant (name, contact_no) VALUES (?, ?)", Statement.RETURN_GENERATED_KEYS);
 
                  PreparedStatement updateSocietyStmt =
                          conn.prepareStatement(
@@ -74,6 +86,10 @@ public class ExcelService {
 
                     String name = getCellValueAsString(row.getCell(3));
                     String contactNo = getCellValueAsString(row.getCell(6));
+                    int age = getCellValueAsInt(row.getCell(5));
+                    String email = getCellValueAsString(row.getCell(7));
+                    String bhk = getCellValueAsString(row.getCell(8));
+                    int flatNo = getCellValueAsInt(row.getCell(1));
 
                     boolean isAdmin =
                             adminName.equals(name) &&
@@ -82,42 +98,85 @@ public class ExcelService {
                     String myGate =
                             myGateService.generateUniqueMyGateNumber(generatedMyGates);
 
-                    if (isAdmin) {
+                    boolean isTenant = false;
+                    Cell isTenantCell = row.getCell(9);
+                    if (isTenantCell != null) {
+                        if (isTenantCell.getCellType() == CellType.BOOLEAN) {
+                            isTenant = isTenantCell.getBooleanCellValue();
+                        } else if (isTenantCell.getCellType() == CellType.STRING) {
+                            String val = isTenantCell.getStringCellValue().trim();
+                            isTenant = "yes".equalsIgnoreCase(val) || "true".equalsIgnoreCase(val);
+                        }
+                    }
 
-                        updateAdminStmt.setInt(1, getCellValueAsInt(row.getCell(1)));
-                        updateAdminStmt.setString(2, getCellValueAsString(row.getCell(2)));
-                        updateAdminStmt.setString(3, getCellValueAsString(row.getCell(4)));
-                        updateAdminStmt.setInt(4, getCellValueAsInt(row.getCell(5)));
-                        updateAdminStmt.setString(5, myGate);
-                        updateAdminStmt.setString(6, getCellValueAsString(row.getCell(7)));
-                        updateAdminStmt.setString(7, getCellValueAsString(row.getCell(8)));
-                        updateAdminStmt.setString(8, name);
-                        updateAdminStmt.setString(9, contactNo);
-                        updateAdminStmt.setInt(10, societySid);
+                    Integer tenantId = null;
+                    if (isTenant) {
+                        String tName = getCellValueAsString(row.getCell(10));
+                        String tContact = getCellValueAsString(row.getCell(11));
+                        
+                        insertTenantStmt.setString(1, tName);
+                        insertTenantStmt.setString(2, tContact);
+                        insertTenantStmt.executeUpdate();
+                        try (ResultSet rs = insertTenantStmt.getGeneratedKeys()) {
+                            if (rs.next()) {
+                                tenantId = rs.getInt(1);
+                            }
+                        }
+                    }
+
+                    if (isAdmin) {
+                        // Update existing admin resident record
+                        updateAdminStmt.setInt(1, age);
+                        updateAdminStmt.setString(2, myGate);
+                        updateAdminStmt.setString(3, email);
+                        updateAdminStmt.setString(4, bhk);
+                        updateAdminStmt.setBoolean(5, isTenant);
+                        if (tenantId != null) {
+                            updateAdminStmt.setInt(6, tenantId);
+                        } else {
+                            updateAdminStmt.setNull(6, java.sql.Types.INTEGER);
+                        }
+                        updateAdminStmt.setString(7, contactNo);
 
                         updateAdminStmt.executeUpdate();
 
                     } else {
-
-                        insertResidentStmt.setInt(1, nextMemId++);
-                        insertResidentStmt.setInt(2, societySid);
-                        insertResidentStmt.setString(3, name);
-                        insertResidentStmt.setInt(4, getCellValueAsInt(row.getCell(1)));
-                        insertResidentStmt.setString(5, getCellValueAsString(row.getCell(2)));
-                        insertResidentStmt.setString(6, getCellValueAsString(row.getCell(4)));
-                        insertResidentStmt.setInt(7, getCellValueAsInt(row.getCell(5)));
-                        insertResidentStmt.setString(8, contactNo);
-                        insertResidentStmt.setString(9, myGate);
-                        insertResidentStmt.setString(10, getCellValueAsString(row.getCell(8)));
-                        insertResidentStmt.setString(11, getCellValueAsString(row.getCell(7)));
+                        // Insert new resident
+                        insertResidentStmt.setInt(1, nextMemId);
+                        insertResidentStmt.setInt(2, age);
+                        insertResidentStmt.setString(3, contactNo);
+                        insertResidentStmt.setString(4, myGate);
+                        insertResidentStmt.setString(5, bhk);
+                        insertResidentStmt.setString(6, email);
+                        insertResidentStmt.setString(7, name);
+                        insertResidentStmt.setInt(8, societySid);
+                        insertResidentStmt.setBoolean(9, isTenant);
+                        if (tenantId != null) {
+                            insertResidentStmt.setInt(10, tenantId);
+                        } else {
+                            insertResidentStmt.setNull(10, java.sql.Types.INTEGER);
+                        }
 
                         insertResidentStmt.addBatch();
+                    }
+
+                    // Insert flat record for every resident
+                    insertFlatStmt.setString(1, String.valueOf(flatNo));
+                    insertFlatStmt.setInt(2, societySid);
+                    insertFlatStmt.setString(3, String.valueOf(isAdmin ? getAdminMemId(conn, contactNo) : nextMemId));
+                    insertFlatStmt.setString(4, isTenant ? "TENANT" : "OWNER");
+                    insertFlatStmt.setString(5, myGate);
+                    insertFlatStmt.addBatch();
+
+                    if (!isAdmin) {
+                        nextMemId++;
                     }
 
                     insertResidentBill(conn, myGate);
                 }
 
                 insertResidentStmt.executeBatch();
+                insertFlatStmt.executeBatch();
                 conn.commit();
             }
 
@@ -144,14 +203,14 @@ public class ExcelService {
     private String[] getAdminInfo(Connection conn, int sid) throws SQLException {
         try (PreparedStatement stmt =
                      conn.prepareStatement(
-                             "SELECT name, contact_no FROM resident WHERE sid=? AND isadmin=true")) {
+                             "SELECT contact_no FROM resident WHERE sid=? AND isadmin=true")) {
 
             stmt.setInt(1, sid);
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next())
                 return new String[]{
-                        rs.getString("name"),
+                        "", // name is no longer on resident; use empty placeholder
                         rs.getString("contact_no")
                 };
 
@@ -159,12 +218,21 @@ public class ExcelService {
         }
     }
 
+    private String getAdminMemId(Connection conn, String contactNo) throws SQLException {
+        try (PreparedStatement stmt =
+                     conn.prepareStatement("SELECT mem_id FROM resident WHERE contact_no=? AND isadmin=true")) {
+            stmt.setString(1, contactNo);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getString("mem_id");
+            return "0";
+        }
+    }
+
     private int getNextMemId(Connection conn, int sid) throws SQLException {
         try (PreparedStatement stmt =
                      conn.prepareStatement(
-                             "SELECT COALESCE(MAX(mem_id),0) FROM resident WHERE sid=?")) {
+                             "SELECT COALESCE(MAX(CAST(mem_id AS INTEGER)),0) FROM resident")) {
 
-            stmt.setInt(1, sid);
             ResultSet rs = stmt.executeQuery();
             rs.next();
             return rs.getInt(1) + 1;

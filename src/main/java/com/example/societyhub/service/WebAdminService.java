@@ -16,16 +16,9 @@ public class WebAdminService {
     }
 
     public List<Society> getSocietyDashboardData() throws SQLException {
-
-        List<Society> societies = dbHandler.getAllSocieties();
-
-        for (Society society : societies) {
-            society.setResidents(dbHandler.getResident(society.getSid()));
-            society.setBills(dbHandler.fetchBillDetails(society.getSid()));
-            society.setAdmins(dbHandler.getAdmin(society.getSid()));
-        }
-
-        return societies;
+        // Society no longer has residents/bills/admins list fields.
+        // Return basic society data; related data should be fetched via
+        // separate service calls when needed.
+        return dbHandler.getAllSocieties();
     }
 }
-

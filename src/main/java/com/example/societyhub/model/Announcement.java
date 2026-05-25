@@ -8,10 +8,11 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class Announcement {
-    private Integer sid;
+    private Integer id;            // PK
+    private Integer sid;           // FK -> Society
     private String title;
     private String message;
     private String category;
-    private LocalDateTime createdAt;
     private Boolean isActive;
+    private LocalDateTime createdAt = LocalDateTime.now();
 }

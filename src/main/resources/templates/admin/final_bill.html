@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Housing Society Bill</title>
     <style>
         body {
@@ -123,9 +123,9 @@
     <table class="bill-details">
         <tr>
             <td>NAME:</td>
-            <td th:text="${formData['name']}"></td>
+            <td th:text="${formData['mem_id']}"></td>
             <td>ROOM NO:</td>
-            <td th:text="${formData['room_no']}"></td>
+            <td th:text="${formData['flat_no']}"></td>
         </tr>
         <tr>
             <td>BILL NO:</td>
@@ -139,49 +139,11 @@
             <th>SR NO</th>
             <th>DETAILS</th>
             <th>AMOUNT</th>
-            <th>SR NO</th>
-            <th>DETAILS</th>
-            <th>AMOUNT</th>
         </tr>
-        <tr>
-            <td>1</td>
-            <td>Maintenance Contribution</td>
-            <td th:text="${formData['maintenance_contribution']}"></td>
-            <td>6</td>
-            <td>Sub Charge</td>
-            <td th:text="${formData['sub_charge']}"></td>
-        </tr>
-        <tr>
-            <td>2</td>
-            <td>Housing Board Contribution</td>
-            <td th:text="${formData['housing_board_contribution']}"></td>
-            <td>7</td>
-            <td>Fine</td>
-            <td th:text="${formData['fine']}"></td>
-        </tr>
-        <tr>
-            <td>3</td>
-            <td>Property Tax Contribution</td>
-            <td th:text="${formData['property_tax_contribution']}"></td>
-            <td>8</td>
-            <td>Building Dev Fund</td>
-            <td th:text="${formData['building_dev_fund']}"></td>
-        </tr>
-        <tr>
-            <td>4</td>
-            <td>Sinking Fund</td>
-            <td th:text="${formData['sinking_fund']}"></td>
-            <td>9</td>
-            <td>Other</td>
-            <td th:text="${formData['other']}"></td>
-        </tr>
-        <tr>
-            <td>5</td>
-            <td>Due Date</td>
-            <td th:text="${formData['due_date']}"></td>
-            <td>10</td>
-            <td>Reserve Mhada Service Charge</td>
-            <td th:text="${formData['reserve_mhada_service_charge']}"></td>
+        <tr th:each="item, stat : ${formData['lineItems']}">
+            <td th:text="${stat.count}"></td>
+            <td th:text="${item['charge_name']}"></td>
+            <td th:text="${item['amount']}"></td>
         </tr>
     </table>
     <table class="footer-section">
@@ -200,7 +162,7 @@
             <td th:text="${formData['arrears']}"></td>
         </tr>
         <tr>
-            <td>Bldg. Fund <br> Dues:</td>
+            <td>Bldg. Fund <br/> Dues:</td>
             <td th:text="${formData['bldg_fund_due']}"></td>
             <td>Amount Due:</td>
             <td>Rs.</td>
@@ -211,7 +173,7 @@
             <td colspan="4"></td>
         </tr>
 <!--        <tr>-->
-<!--            <td colspan="5" style="text-align: center;">Payment Status: <td th:text="${formData['status']}>"></td>-->
+<!--            <td colspan="5" style="text-align: center;">Payment Status: <span th:text="${formData['status']}"></span></td>-->
 <!--        </tr>-->
     </table>
 </div>
