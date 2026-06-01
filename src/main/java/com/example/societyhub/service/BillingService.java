@@ -200,6 +200,67 @@ public class BillingService {
         return items;
     }
 
+    /**
+     * Get line items WITH charge type history details for a specific UnitBillRecord.
+     * Returns each charge's id, name (as "name"), amount, and applicable_to.
+     */
+    public List<Map<String, Object>> getLineItemsWithDetails(int unitBillRecordId) throws SQLException {
+        List<Map<String, Object>> items = new ArrayList<>();
+        String sql = "SELECT bli.id, bli.amount, cth.name_at_billing, cth.applicable_to " +
+                     "FROM bill_line_item bli " +
+                     "JOIN charge_type_history cth ON bli.charge_type_history_id = cth.history_id " +
+                     "WHERE bli.unit_bill_record_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, unitBillRecordId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("id", rs.getInt("id"));
+                    item.put("name", rs.getString("name_at_billing"));
+                    item.put("amount", rs.getBigDecimal("amount"));
+                    item.put("applicable_to", rs.getString("applicable_to"));
+                    items.add(item);
+                }
+            }
+        }
+        return items;
+    }
+
+    /**
+     * Get UnitBillRecord by mygate_no, month, and year.
+     * Joins with flat table to resolve mygate_no → flat_id.
+     */
+    public UnitBillRecord getUnitBillRecordByMygate(String mygateNo, String month, int year) throws SQLException {
+        String sql = "SELECT ubr.id, ubr.bill_id, ubr.flat_id, ubr.status, ubr.total_amount, ubr.fine_amount, ubr.paid_date, ubr.month, ubr.year " +
+                     "FROM unit_bill_record ubr " +
+                     "JOIN flat f ON ubr.flat_id = f.flat_id " +
+                     "WHERE f.mygate_no = ? AND ubr.month = ? AND ubr.year = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, mygateNo);
+            ps.setString(2, month.toLowerCase());
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    UnitBillRecord ubr = new UnitBillRecord();
+                    ubr.setId(rs.getInt("id"));
+                    ubr.setBill_id(rs.getInt("bill_id"));
+                    ubr.setFlat_id(rs.getInt("flat_id"));
+                    ubr.setStatus(rs.getString("status"));
+                    ubr.setTotal_amount(rs.getBigDecimal("total_amount"));
+                    ubr.setFine_amount(rs.getBigDecimal("fine_amount"));
+                    java.sql.Date pd = rs.getDate("paid_date");
+                    ubr.setPaid_date(pd != null ? pd.toLocalDate() : null);
+                    ubr.setMonth(rs.getString("month"));
+                    ubr.setYear(rs.getInt("year"));
+                    return ubr;
+                }
+            }
+        }
+        return null;
+    }
+
     // ─── PAYMENT STATUS UPDATES ─────────────────────────────────────────────────
 
     /**
@@ -247,6 +308,33 @@ public class BillingService {
             ps.setInt(1, unitBillRecordId);
             ps.executeUpdate();
             conn.commit();
+        }
+    }
+
+    /**
+     * Update the amount of a specific bill line item.
+     */
+    public void updateBillLineItemAmount(int lineItemId, BigDecimal newAmount) throws SQLException {
+        String query = "UPDATE bill_line_item SET amount = ? WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setBigDecimal(1, newAmount);
+            ps.setInt(2, lineItemId);
+            ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Recalculate and update the total_amount for a unit bill record.
+     */
+    public void recalculateUnitBillTotal(int unitBillRecordId) throws SQLException {
+        BigDecimal total = calculateTotalForUnitBill(unitBillRecordId);
+        String query = "UPDATE unit_bill_record SET total_amount = ? WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setBigDecimal(1, total);
+            ps.setInt(2, unitBillRecordId);
+            ps.executeUpdate();
         }
     }
 
@@ -425,5 +513,21 @@ public class BillingService {
         record.setMonth(rs.getString("month"));
         record.setYear(rs.getInt("year"));
         return record;
+    }
+
+    public boolean isAdmin(int memId) {
+        String sql = "SELECT isadmin FROM resident WHERE mem_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, memId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBoolean("isadmin");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

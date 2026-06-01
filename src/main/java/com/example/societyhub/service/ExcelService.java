@@ -56,11 +56,11 @@ public class ExcelService {
             // Flat-level data (flat_no, society_id, etc.) goes into the flat table.
             try (PreparedStatement updateAdminStmt =
                          conn.prepareStatement(
-                                 "UPDATE resident SET age=?, mygate_no=?, email=?, bhk=?, is_tenant=?, tenant_id=? WHERE contact_no=? AND isadmin=true");
+                                 "UPDATE resident SET age=?, mygate_no=?, email=?, bhk=?, is_tenant=?, tenant_id=?, mr_ms=?, gender=?, room_no=? WHERE contact_no=? AND isadmin=true");
 
                  PreparedStatement insertResidentStmt =
                          conn.prepareStatement(
-                                 "INSERT INTO resident (mem_id, age, contact_no, isadmin, mygate_no, bhk, email, name, sid, is_tenant, tenant_id) VALUES (?, ?, ?, false, ?, ?, ?, ?, ?, ?, ?)");
+                                 "INSERT INTO resident (mem_id, age, contact_no, isadmin, mygate_no, bhk, email, name, sid, is_tenant, tenant_id, mr_ms, gender, room_no) VALUES (?, ?, ?, false, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
                  PreparedStatement insertFlatStmt =
                          conn.prepareStatement(
@@ -84,12 +84,17 @@ public class ExcelService {
                     if (row.getRowNum() == 0 || isRowEmpty(row))
                         continue;
 
-                    String name = getCellValueAsString(row.getCell(3));
-                    String contactNo = getCellValueAsString(row.getCell(6));
-                    int age = getCellValueAsInt(row.getCell(5));
-                    String email = getCellValueAsString(row.getCell(7));
-                    String bhk = getCellValueAsString(row.getCell(8));
-                    int flatNo = getCellValueAsInt(row.getCell(1));
+                    String name = getCellValueAsString(row.getCell(3)); // Owner Name
+                    String contactNo = getCellValueAsString(row.getCell(6)); // Owner Contact
+                    int age = getCellValueAsInt(row.getCell(5)); // Owner Age
+                    String email = getCellValueAsString(row.getCell(7)); // Owner Email
+                    String bhk = getCellValueAsString(row.getCell(8)); // BHK
+                    int flatNo = getCellValueAsInt(row.getCell(1)); // Flat No
+                    String blockWing = getCellValueAsString(row.getCell(2)); // Block/Wing
+                    String mrMs = ""; // Block/Wing replaces Mr/Ms in template, keep empty
+                    String gender = getCellValueAsString(row.getCell(4)); // Gender
+
+                    String flatNoStr = blockWing.isEmpty() ? String.valueOf(flatNo) : blockWing + "-" + flatNo;
 
                     boolean isAdmin =
                             adminName.equals(name) &&
@@ -119,7 +124,7 @@ public class ExcelService {
                         insertTenantStmt.executeUpdate();
                         try (ResultSet rs = insertTenantStmt.getGeneratedKeys()) {
                             if (rs.next()) {
-                                tenantId = rs.getInt(1);
+                                  tenantId = rs.getInt(1);
                             }
                         }
                     }
@@ -136,7 +141,10 @@ public class ExcelService {
                         } else {
                             updateAdminStmt.setNull(6, java.sql.Types.INTEGER);
                         }
-                        updateAdminStmt.setString(7, contactNo);
+                        updateAdminStmt.setString(7, mrMs);
+                        updateAdminStmt.setString(8, gender);
+                        updateAdminStmt.setInt(9, flatNo);
+                        updateAdminStmt.setString(10, contactNo);
 
                         updateAdminStmt.executeUpdate();
 
@@ -156,12 +164,15 @@ public class ExcelService {
                         } else {
                             insertResidentStmt.setNull(10, java.sql.Types.INTEGER);
                         }
+                        insertResidentStmt.setString(11, mrMs);
+                        insertResidentStmt.setString(12, gender);
+                        insertResidentStmt.setInt(13, flatNo);
 
                         insertResidentStmt.addBatch();
                     }
 
                     // Insert flat record for every resident
-                    insertFlatStmt.setString(1, String.valueOf(flatNo));
+                    insertFlatStmt.setString(1, flatNoStr);
                     insertFlatStmt.setInt(2, societySid);
                     insertFlatStmt.setString(3, String.valueOf(isAdmin ? getAdminMemId(conn, contactNo) : nextMemId));
                     insertFlatStmt.setString(4, isTenant ? "TENANT" : "OWNER");

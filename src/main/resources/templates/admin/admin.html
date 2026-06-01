@@ -195,7 +195,7 @@
             <h6 th:text="${note.title}">Title</h6>
             <p th:text="${note.message}">Message</p>
 
-            <button class="delete-btn">Delete</button>
+            <button class="delete-btn" th:data-sid="${note.sid}" th:data-title="${note.title}">Delete</button>
         </div>
     </div>
 
@@ -251,7 +251,7 @@
 
     function deleteNote(sid, title) {
         fetch('/admin/delete_note', {
-            method: 'POST',
+            method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
             },

@@ -140,11 +140,16 @@
             <th>DETAILS</th>
             <th>AMOUNT</th>
         </tr>
-        <tr th:each="item, stat : ${formData['lineItems']}">
+        <tbody>
+        <tr th:each="item, stat : ${lineItems}">
             <td th:text="${stat.count}"></td>
             <td th:text="${item['charge_name']}"></td>
             <td th:text="${item['amount']}"></td>
         </tr>
+        <tr class="total-row"><td></td><td>Current Month Total</td><td th:text="${formData['current_month_total']}"></td></tr>
+        <tr><td></td><td>Fine</td><td th:text="${formData['fine']}"></td></tr>
+        <tr class="total-row"><td></td><td><strong>Amount Due</strong></td><td th:text="${formData['amount_due']}"></td></tr>
+        </tbody>
     </table>
     <table class="footer-section">
         <tr>
