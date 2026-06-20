@@ -8,7 +8,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/society_management
     username: postgres
-    password: pgadmin4
+    password: Yashm123@
 
 #  jpa:
 #    hibernate:

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import javax.sql.DataSource;
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -308,6 +309,11 @@ public class DBHandler {
     public void addResident(Resident resident, int societyId) throws Exception {
 
         String query = "INSERT INTO resident (mem_id, age, contact_no, isadmin, mygate_no, bhk, email, is_tenant, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // SQL query to insert a new resident
+        String query = "insert into resident (mem_id, sid, name, room_no, mr_ms, gender, age, contact_no, isadmin, mygate_no, bhk, email) values (?, ?, ?, ?, ?, ?, ?, ?, false, ?, ?, ?)";
+        String billInsert =
+                "INSERT INTO resident_bill(mygate_no,year, january,february,march,april,may,june,july,august,september,october,november,december) " +
+                        "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
@@ -371,6 +377,28 @@ public class DBHandler {
                     
                     connection.commit();
                 }
+                // Insert Resident Bill Record
+                try (PreparedStatement billStmt =
+                             connection.prepareStatement(billInsert)) {
+
+                    billStmt.setString(1, myGateNo);
+                    billStmt.setInt(2, Year.now().getValue());
+
+                    for (int i = 3; i <= 14; i++) {
+                        billStmt.setInt(i, 0);
+                    }
+
+                    billStmt.executeUpdate();
+                }
+
+                connection.commit();
+            } catch (Exception e) {
+
+                connection.rollback();
+
+                e.printStackTrace();
+
+                throw e;
             }
         } catch (SQLException e) {
             e.printStackTrace();
