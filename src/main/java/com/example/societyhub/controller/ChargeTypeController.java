@@ -185,8 +185,10 @@ public class ChargeTypeController {
                                  HttpSession session,
                                  RedirectAttributes redirectAttributes) {
         Integer sid = (Integer) session.getAttribute("adminSocietyId");
-        if (sid == null) {
-            return "error";
+        Integer memId = (Integer) session.getAttribute("adminMemId");
+        if (sid == null || memId == null || !billingService.isAdmin(memId)) {
+            redirectAttributes.addFlashAttribute("error", "Unauthorized access. Only admins can generate bills.");
+            return "redirect:/login";
         }
 
         try {
@@ -212,9 +214,10 @@ public class ChargeTypeController {
             HttpSession session) {
 
         Integer sid = (Integer) session.getAttribute("adminSocietyId");
-        if (sid == null) {
-            return ResponseEntity.status(401)
-                    .body(Map.of("error", "Not logged in or session expired."));
+        Integer memId = (Integer) session.getAttribute("adminMemId");
+        if (sid == null || memId == null || !billingService.isAdmin(memId)) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("error", "Unauthorized. Only admins are allowed to generate bills."));
         }
 
         try {

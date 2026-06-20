@@ -878,6 +878,7 @@ public class DBHandler {
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     while (resultSet.next()) { // Loop through all results
                         Note note = new Note();
+                        note.setSid(sid);
                         note.setTitle(resultSet.getString("title"));
                         note.setMessage(resultSet.getString("message"));
                         noteList.add(note); // Add each ToDo to the list

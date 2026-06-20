@@ -1,14 +1,19 @@
 package com.example.societyhub.controller;
 
 import com.example.societyhub.service.BillingCalculationService;
+import com.example.societyhub.service.BillDataAssemblerService;
 import com.example.societyhub.service.DBHandler;
 import com.example.societyhub.model.Bill;
 import com.example.societyhub.model.Society;
+import com.example.societyhub.model.Resident;
+import com.example.societyhub.model.UnitBillRecord;
+import com.example.societyhub.service.BillingService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.http.ResponseEntity;
 import com.itextpdf.html2pdf.HtmlConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -23,10 +28,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -38,13 +45,19 @@ public class BillController {
     @Autowired
     private final DBHandler dbHandler;
     private final BillingCalculationService billingCalculationService;
+    private final BillDataAssemblerService billDataAssemblerService;
+    private final BillingService billingService;
 
     @Autowired
     public BillController(DBHandler dbHandler,
             BillingCalculationService billingCalculationService,
+            BillDataAssemblerService billDataAssemblerService,
+            BillingService billingService,
             ThymeleafViewResolver thymeleafViewResolver) {
         this.dbHandler = dbHandler;
         this.billingCalculationService = billingCalculationService;
+        this.billDataAssemblerService = billDataAssemblerService;
+        this.billingService = billingService;
         this.thymeleafViewResolver = thymeleafViewResolver;
     }
 
@@ -56,46 +69,39 @@ public class BillController {
         return "redirect:/api/charges";
     }
 
-    public String prepareHtmlForPdf(Integer sid, Map<String, String> formData, Model model, double currentMonthTotal,
-            double amountDue) throws Exception {
-        // Retrieve society details from the database
-        Society society = dbHandler.getSocietyBySid(sid);
-        formData.put("society_name", society.getName());
-        formData.put("street", society.getStreet());
-        formData.put("landmark", society.getLandmark());
-        formData.put("locality", society.getLocality());
-        formData.put("pincode", society.getPincode());
-        formData.put("city", society.getCity());
-
-        formData.put("current_month_total", String.valueOf(currentMonthTotal));
-        formData.put("amount_due", String.valueOf(amountDue));
-        formData.put("amount_due_in_words", BillingCalculationService.convertNumberToWords((int) amountDue));
-        formData.put("fine", String.valueOf(0));
-
-        String billDate = LocalDate.now(ZoneId.of("Asia/Kolkata")).toString();
-        formData.put("bill_date", billDate);
-
-        Integer billNo = dbHandler.getNextBillNumber();
-        formData.put("bill_no", billNo.toString());
-
+    public String prepareHtmlForPdf(Integer sid, String month, String dueDate, Model model) throws Exception {
         // Retrieve resident data from the database
-        List<Map<String, String>> residentsData = dbHandler.queryResident(sid);
-        if (residentsData == null || residentsData.isEmpty()) {
+        List<Resident> residents = dbHandler.getResident(sid);
+        if (residents == null || residents.isEmpty()) {
             model.addAttribute("error", "No resident data found for this session ID");
             return null;
         }
 
         // Combine form data and resident data to generate bills for all residents
         StringBuilder htmlBuilder = new StringBuilder();
-        for (Map<String, String> residentData : residentsData) {
-            Map<String, String> billData = new HashMap<>(formData);
-            billData.putAll(residentData);
+        for (Resident resident : residents) {
+            Map<String, Object> billData = billDataAssemblerService.build(
+                    resident.getMygate_no(),
+                    month,
+                    "UNPAID",
+                    sid
+            );
+            
+            if (dueDate != null) {
+                billData.put("due_date", dueDate);
+            }
 
             Context context = new Context();
             context.setVariable("formData", billData);
+            
+            // Expose lineItems as a top-level variable for template iteration
+            Object lineItems = billData.get("lineItems");
+            if (lineItems != null) {
+                context.setVariable("lineItems", lineItems);
+            }
+
             String html = thymeleafViewResolver.getTemplateEngine().process("admin/final_bill", context);
             htmlBuilder.append(html);
-
         }
 
         return htmlBuilder.toString();
@@ -124,11 +130,10 @@ public class BillController {
         }
 
         try {
-            // TODO: preview-pdf needs reworking for the new bill schema
-            double currentMonthTotal = 0.0;
-            double amountDue = 0.0;
+            String month = formData.get("bill_for");
+            String dueDate = formData.get("due_date");
 
-            String htmlContent = prepareHtmlForPdf(sid, formData, model, currentMonthTotal, amountDue);
+            String htmlContent = prepareHtmlForPdf(sid, month, dueDate, model);
             if (htmlContent == null) {
                 return "error";
             }
@@ -177,16 +182,7 @@ public class BillController {
             }
 
             else {
-                Map<String, String> formData = new HashMap<>();
-                formData.put("sid", String.valueOf(bill.getSid()));
-                formData.put("due_date", String.valueOf(bill.getDue_date()));
-
-                // TODO: generate-pdf needs reworking for new bill schema
-                // Individual charge fields are now in bill_line_item + charge_type_history
-                double currentMonthTotal = 0.0;
-                double amountDue = 0.0;
-
-                String htmlContent = prepareHtmlForPdf(sid, formData, model, currentMonthTotal, amountDue);
+                String htmlContent = prepareHtmlForPdf(sid, bill.getMonth(), String.valueOf(bill.getDue_date()), model);
                 if (htmlContent == null) {
                     return "error";
                 }
@@ -232,5 +228,45 @@ public class BillController {
         }
     }
 
+    @PostMapping("/get_bill_line_items")
+    @ResponseBody
+    public ResponseEntity<?> getBillLineItems(@RequestBody Map<String, String> requestBody) {
+        try {
+            String mygateNo = requestBody.get("mygate_no");
+            String month = requestBody.get("month").toLowerCase();
+            int year = LocalDate.now().getYear();
 
+            UnitBillRecord ubr = billingService.getUnitBillRecordByMygate(mygateNo, month, year);
+            if (ubr == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No bill record found"));
+            }
+
+            List<Map<String, Object>> lineItems = billingService.getLineItemsWithDetails(ubr.getId());
+            return ResponseEntity.ok(Map.of("unitBillRecordId", ubr.getId(), "lineItems", lineItems));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/update_bill_line_items")
+    @ResponseBody
+    public ResponseEntity<?> updateBillLineItems(@RequestBody Map<String, Object> requestBody) {
+        try {
+            Integer unitBillRecordId = (Integer) requestBody.get("unitBillRecordId");
+            List<Map<String, Object>> updates = (List<Map<String, Object>>) requestBody.get("updates");
+
+            for (Map<String, Object> update : updates) {
+                Integer id = (Integer) update.get("id");
+                BigDecimal amount = new BigDecimal(update.get("amount").toString());
+                billingService.updateBillLineItemAmount(id, amount);
+            }
+
+            billingService.recalculateUnitBillTotal(unitBillRecordId);
+            return ResponseEntity.ok(Map.of("message", "Success"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
 }

@@ -4,7 +4,7 @@ public class DBMigration {
     public static void main(String[] args) {
         String url = "jdbc:postgresql://localhost:5432/society_management";
         String user = "postgres";
-        String password = "pgadmin4";
+        String password = "Yashm123@";
 
         try (Connection conn = DriverManager.getConnection(url, user, password);
              Statement stmt = conn.createStatement()) {

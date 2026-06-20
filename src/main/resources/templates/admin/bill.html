@@ -70,61 +70,19 @@
             <tr>
                 <th>SR NO</th>
                 <th>DETAILS</th>
-                <th>AMOUNT</th>
-                <th>SR NO</th>
-                <th>DETAILS</th>
-                <th>AMOUNT</th>
+                <th>AMOUNT (Rs.)</th>
             </tr>
             </thead>
             <tbody>
-            <tr>
-                <td>1</td>
-                <td>Maintenance Contribution</td>
-                <td th:text="${formData['maintenance_contribution']}"></td>
-
-                <td>6</td>
-                <td>Sub Charge</td>
-                <td th:text="${formData['sub_charge']}"></td>
+            <tr th:each="item, stat : ${lineItems}">
+                <td th:text="${stat.count}"></td>
+                <td th:text="${item['charge_name']}"></td>
+                <td th:text="${item['amount']}"></td>
             </tr>
-
             <tr>
-                <td>2</td>
-                <td>Housing Board Contribution</td>
-                <td th:text="${formData['housing_board_contribution']}"></td>
-
-                <td>7</td>
-                <td>Fine</td>
-                <td th:text="${formData['fine']}"></td>
-            </tr>
-
-            <tr>
-                <td>3</td>
-                <td>Property Tax Contribution</td>
-                <td th:text="${formData['property_tax_contribution']}"></td>
-
-                <td>8</td>
-                <td>Building Dev Fund</td>
-                <td th:text="${formData['building_dev_fund']}"></td>
-            </tr>
-
-            <tr>
-                <td>4</td>
-                <td>Sinking Fund</td>
-                <td th:text="${formData['sinking_fund']}"></td>
-
-                <td>9</td>
-                <td>Other</td>
-                <td th:text="${formData['other']}"></td>
-            </tr>
-
-            <tr>
-                <td>5</td>
-                <td>Due Date</td>
+                <td></td>
+                <td><strong>Due Date</strong></td>
                 <td th:text="${formData['due_date']}"></td>
-
-                <td>10</td>
-                <td>Reserve Mhada Service Charge</td>
-                <td th:text="${formData['reserve_mhada_service_charge']}"></td>
             </tr>
             </tbody>
         </table>

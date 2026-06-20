@@ -2,6 +2,8 @@ package com.example.societyhub.controller;
 
 import com.example.societyhub.model.Announcement;
 import com.example.societyhub.model.Complaint;
+import com.example.societyhub.model.UnitBillRecord;
+import com.example.societyhub.service.BillingService;
 import com.example.societyhub.service.DBHandler;
 import com.example.societyhub.service.EmailOrchestrationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,7 +16,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -26,11 +30,14 @@ public class EmailController {
 
     private final DBHandler dbHandler;
     private final EmailOrchestrationService orchestrationService;
+    private final BillingService billingService;
 
     public EmailController(DBHandler dbHandler,
-                           EmailOrchestrationService orchestrationService) {
+                           EmailOrchestrationService orchestrationService,
+                           BillingService billingService) {
         this.dbHandler = dbHandler;
         this.orchestrationService = orchestrationService;
+        this.billingService = billingService;
     }
 
     /* ================= VIEW PAGE ================= */
@@ -83,13 +90,29 @@ public class EmailController {
         }
 
         try {
+            String mygateNo = requestBody.get("mygate_no");
+            String selectedMonth = requestBody.get("selectedMonth");
+            String status = requestBody.get("status");
+            String email = requestBody.get("email");
+
+            // Get dynamic charges from billing data
+            int year = LocalDate.now().getYear();
+            UnitBillRecord ubr = billingService.getUnitBillRecordByMygate(
+                    mygateNo, selectedMonth, year);
+
+            if (ubr != null) {
+                List<Map<String, Object>> lineItems =
+                        billingService.getLineItemsWithDetails(ubr.getId());
+                log.info("Fetched {} dynamic line items for mygate={} month={}",
+                        lineItems.size(), mygateNo, selectedMonth);
+            }
 
             orchestrationService.sendReceipt(
-                    requestBody.get("mygate_no"),
-                    requestBody.get("selectedMonth"),
-                    requestBody.get("status"),
+                    mygateNo,
+                    selectedMonth,
+                    status,
                     sid,
-                    requestBody.get("email")
+                    email
             );
 
             return ResponseEntity.ok(

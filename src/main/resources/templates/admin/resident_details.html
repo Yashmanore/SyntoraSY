@@ -216,10 +216,6 @@
                 <label class="form-label">Contact Number</label>
                 <input type="text" id="modalTenantContact" class="form-control" placeholder="Enter contact number">
             </div>
-            <div class="col-md-6">
-                <label class="form-label">Email Address</label>
-                <input type="email" id="modalTenantEmail" class="form-control" placeholder="Enter email">
-            </div>
             <div class="col-12">
                 <label class="form-label">Bill Type</label>
                 <select id="modalTenantBillType" class="form-select">
@@ -251,16 +247,14 @@
 
         const name    = row.dataset.tenantName    || '';
         const contact = row.dataset.tenantContact || '';
-        const email   = row.dataset.tenantEmail   || '';
         const bill    = row.dataset.tenantBilltype || 'ALL';
 
         document.getElementById('modalTenantName').value    = name;
         document.getElementById('modalTenantContact').value = contact;
-        document.getElementById('modalTenantEmail').value   = email;
         document.getElementById('modalTenantBillType').value = bill;
 
         const readonly = !editable;
-        ['modalTenantName','modalTenantContact','modalTenantEmail'].forEach(id => {
+        ['modalTenantName','modalTenantContact'].forEach(id => {
             document.getElementById(id).readOnly = readonly;
         });
         document.getElementById('modalTenantBillType').disabled = readonly;
@@ -278,7 +272,6 @@
         if (!_activeRow) return;
         _activeRow.dataset.tenantName    = document.getElementById('modalTenantName').value;
         _activeRow.dataset.tenantContact = document.getElementById('modalTenantContact').value;
-        _activeRow.dataset.tenantEmail   = document.getElementById('modalTenantEmail').value;
         _activeRow.dataset.tenantBilltype = document.getElementById('modalTenantBillType').value;
         closeTenantModal();
     }
@@ -300,7 +293,6 @@
             const row = checkbox.closest('tr');
             row.dataset.tenantName = '';
             row.dataset.tenantContact = '';
-            row.dataset.tenantEmail = '';
             row.dataset.tenantBilltype = '';
         }
     }
@@ -358,7 +350,6 @@
                 is_tenant:        String(isTenant),
                 tenant_name:      row.dataset.tenantName    || '',
                 tenant_contact:   row.dataset.tenantContact || '',
-                tenant_email:     row.dataset.tenantEmail   || '',
                 tenant_bill_type: row.dataset.tenantBilltype || ''
             };
 
@@ -454,7 +445,6 @@
             is_tenant:        String(isTenant),
             tenant_name:      row.dataset.tenantName    || '',
             tenant_contact:   row.dataset.tenantContact || '',
-            tenant_email:     row.dataset.tenantEmail   || '',
             tenant_bill_type: row.dataset.tenantBilltype || ''
         };
 

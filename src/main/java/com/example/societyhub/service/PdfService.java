@@ -25,6 +25,12 @@ public class PdfService {
         Context context = new Context();
         context.setVariable("formData", data);
 
+        // Expose lineItems as a top-level variable for template iteration
+        Object lineItems = data.get("lineItems");
+        if (lineItems != null) {
+            context.setVariable("lineItems", lineItems);
+        }
+
         String html = thymeleafViewResolver
                 .getTemplateEngine()
                 .process(template, context);
