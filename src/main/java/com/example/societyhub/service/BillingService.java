@@ -66,6 +66,30 @@ public class BillingService {
             // 1. Create the society-wide Bill record
             int billId = createBill(conn, societyId, month, year, dueDate);
 
+            // Fetch the static contributions of the newly created bill to add to flat totals
+            int maint = 0, hboard = 0, ptax = 0, sinking = 0, reserve = 0, sub = 0, fine = 0, bdev = 0, other = 0;
+            String fetchBillQuery = "SELECT maintenance_contribution, housing_board_contribution, property_tax_contribution, " +
+                    "sinking_fund, reserve_mhada_service_charge, sub_charge, fine, building_dev_fund, other " +
+                    "FROM bill WHERE id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(fetchBillQuery)) {
+                ps.setInt(1, billId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        maint = rs.getInt("maintenance_contribution");
+                        hboard = rs.getInt("housing_board_contribution");
+                        ptax = rs.getInt("property_tax_contribution");
+                        sinking = rs.getInt("sinking_fund");
+                        reserve = rs.getInt("reserve_mhada_service_charge");
+                        sub = rs.getInt("sub_charge");
+                        fine = rs.getInt("fine");
+                        bdev = rs.getInt("building_dev_fund");
+                        other = rs.getInt("other");
+                    }
+                }
+            }
+
+            BigDecimal staticSum = BigDecimal.valueOf(maint + hboard + ptax + sinking + reserve + sub + fine + bdev + other);
+
             // 2. Get all flats in the society
             List<Flat> flats = flatService.getFlatsBySociety(societyId);
 
@@ -81,13 +105,9 @@ public class BillingService {
                 // Filter charges applicable to this flat's occupancy type
                 List<ChargeType> applicableCharges = filterChargesByOccupancy(allChargeTypes, occupancyType);
 
-                if (applicableCharges.isEmpty()) {
-                    continue; // no charges for this flat, skip
-                }
-
                 // Create history snapshots and collect IDs
                 List<Integer> historyIds = new ArrayList<>();
-                BigDecimal totalAmount = BigDecimal.ZERO;
+                BigDecimal totalAmount = staticSum;
 
                 for (ChargeType charge : applicableCharges) {
                     int historyId = chargeTypeService.createChargeTypeHistorySnapshot(
@@ -183,21 +203,53 @@ public class BillingService {
                 "JOIN charge_type_history cth ON bli.charge_type_history_id = cth.history_id " +
                 "WHERE bli.unit_bill_record_id = ?";
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            ps.setInt(1, unitBillRecordId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("id", rs.getInt("id"));
-                    item.put("charge_name", rs.getString("name_at_billing"));
-                    item.put("amount", rs.getBigDecimal("amount"));
-                    item.put("applicable_to", rs.getString("applicable_to"));
-                    items.add(item);
+        try (Connection conn = dataSource.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(query)) {
+                ps.setInt(1, unitBillRecordId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Map<String, Object> item = new HashMap<>();
+                        item.put("id", rs.getInt("id"));
+                        item.put("charge_name", rs.getString("name_at_billing"));
+                        item.put("amount", rs.getBigDecimal("amount"));
+                        item.put("applicable_to", rs.getString("applicable_to"));
+                        items.add(item);
+                    }
+                }
+            }
+
+            String billQuery = "SELECT b.maintenance_contribution, b.housing_board_contribution, b.property_tax_contribution, " +
+                    "b.sinking_fund, b.reserve_mhada_service_charge, b.sub_charge, b.fine, b.building_dev_fund, b.other " +
+                    "FROM bill b " +
+                    "JOIN unit_bill_record ubr ON ubr.bill_id = b.id " +
+                    "WHERE ubr.id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(billQuery)) {
+                ps.setInt(1, unitBillRecordId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        addStaticContrib(items, "Maintenance Contribution", rs.getInt("maintenance_contribution"));
+                        addStaticContrib(items, "Housing Board Contribution", rs.getInt("housing_board_contribution"));
+                        addStaticContrib(items, "Property Tax Contribution", rs.getInt("property_tax_contribution"));
+                        addStaticContrib(items, "Sinking Fund", rs.getInt("sinking_fund"));
+                        addStaticContrib(items, "Reserve MHADA Service Charge", rs.getInt("reserve_mhada_service_charge"));
+                        addStaticContrib(items, "Sub Charge", rs.getInt("sub_charge"));
+                        addStaticContrib(items, "Fine Contribution", rs.getInt("fine"));
+                        addStaticContrib(items, "Building Dev Fund", rs.getInt("building_dev_fund"));
+                        addStaticContrib(items, "Other", rs.getInt("other"));
+                    }
                 }
             }
         }
         return items;
+    }
+
+    private void addStaticContrib(List<Map<String, Object>> items, String name, int amount) {
+        Map<String, Object> item = new HashMap<>();
+        item.put("id", -1);
+        item.put("charge_name", name);
+        item.put("amount", BigDecimal.valueOf(amount));
+        item.put("applicable_to", "ALL");
+        items.add(item);
     }
 
     /**
@@ -210,21 +262,53 @@ public class BillingService {
                      "FROM bill_line_item bli " +
                      "JOIN charge_type_history cth ON bli.charge_type_history_id = cth.history_id " +
                      "WHERE bli.unit_bill_record_id = ?";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, unitBillRecordId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("id", rs.getInt("id"));
-                    item.put("name", rs.getString("name_at_billing"));
-                    item.put("amount", rs.getBigDecimal("amount"));
-                    item.put("applicable_to", rs.getString("applicable_to"));
-                    items.add(item);
+        try (Connection conn = dataSource.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, unitBillRecordId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Map<String, Object> item = new HashMap<>();
+                        item.put("id", rs.getInt("id"));
+                        item.put("name", rs.getString("name_at_billing"));
+                        item.put("amount", rs.getBigDecimal("amount"));
+                        item.put("applicable_to", rs.getString("applicable_to"));
+                        items.add(item);
+                    }
+                }
+            }
+
+            String billQuery = "SELECT b.maintenance_contribution, b.housing_board_contribution, b.property_tax_contribution, " +
+                    "b.sinking_fund, b.reserve_mhada_service_charge, b.sub_charge, b.fine, b.building_dev_fund, b.other " +
+                    "FROM bill b " +
+                    "JOIN unit_bill_record ubr ON ubr.bill_id = b.id " +
+                    "WHERE ubr.id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(billQuery)) {
+                ps.setInt(1, unitBillRecordId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        addStaticContribWithDetails(items, "Maintenance Contribution", rs.getInt("maintenance_contribution"));
+                        addStaticContribWithDetails(items, "Housing Board Contribution", rs.getInt("housing_board_contribution"));
+                        addStaticContribWithDetails(items, "Property Tax Contribution", rs.getInt("property_tax_contribution"));
+                        addStaticContribWithDetails(items, "Sinking Fund", rs.getInt("sinking_fund"));
+                        addStaticContribWithDetails(items, "Reserve MHADA Service Charge", rs.getInt("reserve_mhada_service_charge"));
+                        addStaticContribWithDetails(items, "Sub Charge", rs.getInt("sub_charge"));
+                        addStaticContribWithDetails(items, "Fine Contribution", rs.getInt("fine"));
+                        addStaticContribWithDetails(items, "Building Dev Fund", rs.getInt("building_dev_fund"));
+                        addStaticContribWithDetails(items, "Other", rs.getInt("other"));
+                    }
                 }
             }
         }
         return items;
+    }
+
+    private void addStaticContribWithDetails(List<Map<String, Object>> items, String name, int amount) {
+        Map<String, Object> item = new HashMap<>();
+        item.put("id", -1);
+        item.put("name", name);
+        item.put("amount", BigDecimal.valueOf(amount));
+        item.put("applicable_to", "ALL");
+        items.add(item);
     }
 
     /**
@@ -295,12 +379,24 @@ public class BillingService {
         }
     }
 
-    /**
-     * Reset a flat's bill back to UNPAID.
-     */
     public void markAsUnpaid(int unitBillRecordId) throws SQLException {
         String query = "UPDATE unit_bill_record SET status = 'UNPAID', fine_amount = NULL, " +
                 "paid_date = NULL WHERE id = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            conn.setAutoCommit(false);
+            ps.setInt(1, unitBillRecordId);
+            ps.executeUpdate();
+            conn.commit();
+        }
+    }
+
+    /**
+     * Mark a flat's bill as PARTIALLY_PAID.
+     */
+    public void markAsPartiallyPaid(int unitBillRecordId) throws SQLException {
+        String query = "UPDATE unit_bill_record SET status = 'PARTIALLY_PAID', paid_date = CURRENT_DATE WHERE id = ?";
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(query)) {
@@ -345,6 +441,7 @@ public class BillingService {
      * This is the DB-driven replacement for the old hardcoded BillingCalculationService.
      */
     public BigDecimal calculateTotalForUnitBill(int unitBillRecordId) throws SQLException {
+        BigDecimal customTotal = BigDecimal.ZERO;
         String query = "SELECT COALESCE(SUM(bli.amount), 0) AS total " +
                 "FROM bill_line_item bli WHERE bli.unit_bill_record_id = ?";
 
@@ -353,11 +450,36 @@ public class BillingService {
             ps.setInt(1, unitBillRecordId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getBigDecimal("total");
+                    customTotal = rs.getBigDecimal("total");
                 }
             }
         }
-        return BigDecimal.ZERO;
+
+        BigDecimal staticTotal = BigDecimal.ZERO;
+        String billQuery = "SELECT b.maintenance_contribution, b.housing_board_contribution, b.property_tax_contribution, " +
+                "b.sinking_fund, b.reserve_mhada_service_charge, b.sub_charge, b.fine, b.building_dev_fund, b.other " +
+                "FROM bill b " +
+                "JOIN unit_bill_record ubr ON ubr.bill_id = b.id " +
+                "WHERE ubr.id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(billQuery)) {
+            ps.setInt(1, unitBillRecordId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    staticTotal = staticTotal.add(BigDecimal.valueOf(rs.getInt("maintenance_contribution")));
+                    staticTotal = staticTotal.add(BigDecimal.valueOf(rs.getInt("housing_board_contribution")));
+                    staticTotal = staticTotal.add(BigDecimal.valueOf(rs.getInt("property_tax_contribution")));
+                    staticTotal = staticTotal.add(BigDecimal.valueOf(rs.getInt("sinking_fund")));
+                    staticTotal = staticTotal.add(BigDecimal.valueOf(rs.getInt("reserve_mhada_service_charge")));
+                    staticTotal = staticTotal.add(BigDecimal.valueOf(rs.getInt("sub_charge")));
+                    staticTotal = staticTotal.add(BigDecimal.valueOf(rs.getInt("fine")));
+                    staticTotal = staticTotal.add(BigDecimal.valueOf(rs.getInt("building_dev_fund")));
+                    staticTotal = staticTotal.add(BigDecimal.valueOf(rs.getInt("other")));
+                }
+            }
+        }
+
+        return customTotal.add(staticTotal);
     }
 
     /**
@@ -444,14 +566,91 @@ public class BillingService {
         }
     }
 
+
+    private java.sql.Date parseDueDateSafely(String dueDate, String month, int year) {
+        if (dueDate == null || dueDate.trim().isEmpty()) {
+            return getDefaultDueDate(month, year);
+        }
+        try {
+            String trimmed = dueDate.trim();
+            if (trimmed.length() > 10) {
+                trimmed = trimmed.substring(0, 10);
+            }
+            return java.sql.Date.valueOf(trimmed);
+        } catch (Exception e) {
+            return getDefaultDueDate(month, year);
+        }
+    }
+
+    private java.sql.Date getDefaultDueDate(String month, int year) {
+        try {
+            return java.sql.Date.valueOf(String.format("%04d-%02d-15", year, getMonthNumber(month)));
+        } catch (Exception e) {
+            return new java.sql.Date(System.currentTimeMillis());
+        }
+    }
+
+    private int getMonthNumber(String month) {
+        if (month == null) return 1;
+        switch (month.toLowerCase().trim()) {
+            case "january": case "jan": return 1;
+            case "february": case "feb": return 2;
+            case "march": case "mar": return 3;
+            case "april": case "apr": return 4;
+            case "may": return 5;
+            case "june": case "jun": return 6;
+            case "july": case "jul": return 7;
+            case "august": case "aug": return 8;
+            case "september": case "sep": return 9;
+            case "october": case "oct": return 10;
+            case "november": case "nov": return 11;
+            case "december": case "dec": return 12;
+            default: return 1;
+        }
+    }
+
     private int createBill(Connection conn, int societyId, String month, int year, String dueDate) throws SQLException {
-        String query = "INSERT INTO bill (sid, due_date, month, year) VALUES (?, ?, ?, ?)";
+        // Fetch the latest configured contributions for this society from the latest bill
+        int maint = 0, hboard = 0, ptax = 0, sinking = 0, reserve = 0, sub = 0, fine = 0, bdev = 0, other = 0;
+        String fetchQuery = "SELECT maintenance_contribution, housing_board_contribution, property_tax_contribution, " +
+                "sinking_fund, reserve_mhada_service_charge, sub_charge, fine, building_dev_fund, other " +
+                "FROM bill WHERE sid = ? ORDER BY id DESC LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(fetchQuery)) {
+            ps.setInt(1, societyId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    maint = rs.getInt("maintenance_contribution");
+                    hboard = rs.getInt("housing_board_contribution");
+                    ptax = rs.getInt("property_tax_contribution");
+                    sinking = rs.getInt("sinking_fund");
+                    reserve = rs.getInt("reserve_mhada_service_charge");
+                    sub = rs.getInt("sub_charge");
+                    fine = rs.getInt("fine");
+                    bdev = rs.getInt("building_dev_fund");
+                    other = rs.getInt("other");
+                }
+            }
+        }
+
+        String query = "INSERT INTO bill (sid, due_date, month, year, " +
+                "maintenance_contribution, housing_board_contribution, property_tax_contribution, " +
+                "sinking_fund, reserve_mhada_service_charge, sub_charge, fine, building_dev_fund, other) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, societyId);
-            ps.setDate(2, Date.valueOf(dueDate));
+            ps.setDate(2, parseDueDateSafely(dueDate, month, year));
             ps.setString(3, month);
             ps.setInt(4, year);
+            ps.setInt(5, maint);
+            ps.setInt(6, hboard);
+            ps.setInt(7, ptax);
+            ps.setInt(8, sinking);
+            ps.setInt(9, reserve);
+            ps.setInt(10, sub);
+            ps.setInt(11, fine);
+            ps.setInt(12, bdev);
+            ps.setInt(13, other);
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {

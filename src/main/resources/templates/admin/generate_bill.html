@@ -122,6 +122,10 @@
             color: #b91c1c;
         }
 
+        select option[value="Partially Paid"], select option[value="Partially_Paid"] {
+            color: #d97706;
+        }
+
         /* Buttons */
         .btn-edit {
             background: #2563eb;
@@ -258,6 +262,8 @@
                 <select id="bulkStatus" class="form-select" style="width:220px;">
                     <option value="">Change Status</option>
                     <option value="Paid">Paid</option>
+                    <option value="Partially_Paid">Partially Paid</option>
+                    <option value="Unpaid">Unpaid</option>
                     <option value="Paid_with_fine">Paid with fine</option>
                 </select>
 
@@ -311,6 +317,7 @@
                         <td>
                             <select disabled data-status="true" required>
                                 <option th:selected="${resident.status=='Paid'}">Paid</option>
+                                <option th:selected="${resident.status=='Partially_Paid'}">Partially Paid</option>
                                 <option th:selected="${resident.status=='Unpaid'}">Unpaid</option>
                                 <option th:selected="${resident.status=='Paid_with_fine'}">Paid with fine</option>
                             </select>
@@ -325,7 +332,8 @@
                         </td>
 
                         <td>
-                            <button class="btn-send" onclick="sendMaintenanceBill(this)">
+                            <button class="btn-send" onclick="sendMaintenanceBill(this)"
+                                    th:disabled="${resident.status == 'Paid' || resident.status == 'Paid_with_fine'}">
                                 Send Receipt
                             </button>
                         </td>
@@ -394,6 +402,14 @@
             if (button.textContent === 'Edit') {
                 const updatedStatus = statusSelect.value; // Get the updated status value
                 const residentId = row.querySelector("input[data-mygate='true']").value; // Get the MyGate number (unique ID)
+
+                // Update the "Send Receipt" button state immediately when saving
+                const sendButton = row.querySelector(".btn-send");
+                if (updatedStatus === 'Paid' || updatedStatus === 'Paid with fine' || updatedStatus === 'Paid_with_fine') {
+                    sendButton.disabled = true;
+                } else {
+                    sendButton.disabled = false;
+                }
 
                 fetch('/api/update_status', {
                     method: 'POST',
@@ -585,7 +601,15 @@
                             const select =
                                 row.querySelector("[data-status]");
 
-                            select.value = status;
+                            select.value = status.replace(/_/g, " ");
+
+                            // Update "Send Receipt" button disabled state
+                            const sendButton = row.querySelector(".btn-send");
+                            if (status === 'Paid' || status === 'Paid_with_fine') {
+                                sendButton.disabled = true;
+                            } else {
+                                sendButton.disabled = false;
+                            }
                         });
 
                 })

@@ -186,6 +186,7 @@ export function Login() {
     return (
         <div className="auth-container">
             <div className="society-registration-container">
+                <img src="/images/syntora.png" alt="Syntora Logo" className="syntora-logo" />
                 <h2 style={{ textTransform: "none" }}>Login to Syntora</h2>
 
                 <div className="society-registration-sidebar">
