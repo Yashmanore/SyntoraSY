@@ -268,10 +268,11 @@ public class ResidentController {
                         com.example.societyhub.model.UnitBillRecord ubr =
                                 billingService.getUnitBillRecordByFlat(flat.getFlat_id(), monthLower, year);
                         if (ubr != null && ubr.getStatus() != null) {
-                            // Convert DB status (PAID/UNPAID/PAID_WITH_FINE) to display format
+                            // Convert DB status (PAID/UNPAID/PAID_WITH_FINE/PARTIALLY_PAID) to display format
                             String dbStatus = ubr.getStatus().toUpperCase();
                             if ("PAID".equals(dbStatus))            resident.setStatus("Paid");
                             else if ("PAID_WITH_FINE".equals(dbStatus)) resident.setStatus("Paid_with_fine");
+                            else if ("PARTIALLY_PAID".equals(dbStatus)) resident.setStatus("Partially_Paid");
                             else                                         resident.setStatus("Unpaid");
                         } else {
                             resident.setStatus("Unpaid");
@@ -319,6 +320,8 @@ public class ResidentController {
                         billingService.markAsPaid(ubr.getId());
                     } else if ("Paid_with_fine".equalsIgnoreCase(status)) {
                         billingService.markAsPaidWithFine(ubr.getId(), java.math.BigDecimal.ZERO);
+                    } else if ("Partially_Paid".equalsIgnoreCase(status)) {
+                        billingService.markAsPartiallyPaid(ubr.getId());
                     } else {
                         billingService.markAsUnpaid(ubr.getId());
                     }
@@ -417,6 +420,8 @@ public class ResidentController {
                         billingService.markAsPaid(ubr.getId());
                     } else if ("Paid_with_fine".equalsIgnoreCase(status)) {
                         billingService.markAsPaidWithFine(ubr.getId(), java.math.BigDecimal.ZERO);
+                    } else if ("Partially_Paid".equalsIgnoreCase(status)) {
+                        billingService.markAsPartiallyPaid(ubr.getId());
                     } else {
                         billingService.markAsUnpaid(ubr.getId());
                     }
