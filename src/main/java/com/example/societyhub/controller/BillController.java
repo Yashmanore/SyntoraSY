@@ -258,9 +258,6 @@ public class BillController {
 
             for (Map<String, Object> update : updates) {
                 Integer id = (Integer) update.get("id");
-                if (id != null && id < 0) {
-                    continue; // Skip virtual static contribution line items
-                }
                 BigDecimal amount = new BigDecimal(update.get("amount").toString());
                 billingService.updateBillLineItemAmount(id, amount);
             }

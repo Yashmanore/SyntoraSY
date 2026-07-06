@@ -1,332 +1,34 @@
-/* ═══════════════════════════════════════════════════════════
-   Syntora — Glassmorphism Auth Styles
-   Premium housing society management login UI
-   ═══════════════════════════════════════════════════════════ */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-/* ── Base ─────────────────────────────────────────────────── */
+/* Existing styles for login and auth pages */
 html, body {
     margin: 0;
     padding: 0;
-    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-family: 'Arial', sans-serif;
     height: 100%;
-    background:
-        radial-gradient(ellipse at 20% 50%, rgba(49, 94, 135, 0.45) 0%, transparent 60%),
-        radial-gradient(ellipse at 80% 20%, rgba(16, 185, 129, 0.3) 0%, transparent 50%),
-        radial-gradient(ellipse at 60% 80%, rgba(37, 99, 235, 0.25) 0%, transparent 50%),
-        linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f2847 100%) !important;
-    background-attachment: fixed !important;
-    min-height: 100vh;
+    background: linear-gradient(135deg, #5f7c99, #4a6784) !important; /* Updated gradient */
 }
 
-/* ── Full-page container ──────────────────────────────────── */
 .auth-container {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    height: 100vh;
     color: white;
-    position: relative;
-    overflow: hidden;
-    padding: 20px;
-    box-sizing: border-box;
 }
 
-/* Floating ambient orbs */
-.auth-container::before {
-    content: '';
-    position: fixed;
-    top: -150px;
-    left: -150px;
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(49, 94, 135, 0.35) 0%, transparent 70%);
-    border-radius: 50%;
-    animation: floatOrb1 8s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 0;
-}
-
-.auth-container::after {
-    content: '';
-    position: fixed;
-    bottom: -100px;
-    right: -100px;
-    width: 350px;
-    height: 350px;
-    background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%);
-    border-radius: 50%;
-    animation: floatOrb2 10s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 0;
-}
-
-@keyframes floatOrb1 {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50%       { transform: translate(40px, 60px) scale(1.1); }
-}
-
-@keyframes floatOrb2 {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50%       { transform: translate(-40px, -50px) scale(1.1); }
-}
-
-/* ── Glass Card ───────────────────────────────────────────── */
-.society-registration-container {
-    position: relative;
-    z-index: 1;
-    background: rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 20px;
-    box-shadow:
-        0 25px 60px rgba(0, 0, 0, 0.4),
-        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
-        0 1px 0 rgba(255, 255, 255, 0.2) inset;
-    padding: 40px 36px 32px;
-    width: 100%;
-    max-width: 460px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 0;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.society-registration-container:hover {
-    transform: translateY(-2px);
-    box-shadow:
-        0 30px 70px rgba(0, 0, 0, 0.45),
-        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
-}
-
-/* ── Headings ─────────────────────────────────────────────── */
 h2 {
-    margin-bottom: 6px;
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    color: #ffffff;
-    text-align: center;
-}
-
-.society-registration-container h2 {
-    color: #ffffff;
+    margin-bottom: 20px;
     font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 4px;
-    text-transform: none !important;
-    letter-spacing: -0.3px;
-}
-
-/* Subtitle under heading */
-.society-registration-container h2::after {
-    content: 'Society Management Portal';
-    display: block;
-    font-size: 12px;
-    font-weight: 400;
-    color: rgba(255, 255, 255, 0.45);
-    margin-top: 4px;
-    letter-spacing: 0.5px;
+    font-weight: bold;
     text-transform: uppercase;
+    color: #356999; /* Darker shade of gradient */
 }
 
-/* ── Syntora Logo ─────────────────────────────────────────── */
-.syntora-logo {
-    width: 90px;
-    height: 90px;
-    object-fit: contain;
-    margin-bottom: 5px;
-    padding: 0;
-    /* Remove the box background to make it float cleanly */
-    background: transparent;
-    border: none;
-    /* Apply shadow to the logo shape itself */
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
-    animation: logoEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-@keyframes logoEntrance {
-    from { opacity: 0; transform: scale(0.7) translateY(-10px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-/* ── Tab Switcher ─────────────────────────────────────────── */
-.society-registration-sidebar {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    margin-top: 24px;
-    margin-bottom: 24px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 5px;
-    box-sizing: border-box;
-}
-
-.society-registration-sidebar button {
-    flex: 1;
-    background: transparent;
-    border: none;
-    padding: 9px 14px;
-    border-radius: 7px;
-    color: rgba(255, 255, 255, 0.55);
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    font-family: 'Inter', sans-serif;
-    transition: all 0.25s ease;
-    letter-spacing: 0.2px;
-}
-
-.society-registration-sidebar button:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.society-registration-sidebar button:first-child {
-    background: rgba(49, 94, 135, 0.6);
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(49, 94, 135, 0.5);
-}
-
-/* ── Inputs ───────────────────────────────────────────────── */
-.society-registration-container input[type="text"],
-.society-registration-container input[type="password"],
-.society-registration-container input[type="email"],
-.society-registration-container select,
-.password-field input,
-.password-field-admin input {
-    width: 100%;
-    padding: 13px 16px;
-    margin-bottom: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 10px;
-    font-size: 14px;
-    font-family: 'Inter', sans-serif;
-    outline: none;
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(8px);
-    box-sizing: border-box;
-    transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
-    caret-color: #10b981;
-}
-
-.society-registration-container input[type="text"]::placeholder,
-.society-registration-container input[type="password"]::placeholder,
-.society-registration-container input[type="email"]::placeholder,
-.password-field input::placeholder,
-.password-field-admin input::placeholder {
-    color: rgba(255, 255, 255, 0.35);
-    font-size: 13px;
-}
-
-.society-registration-container input[type="text"]:focus,
-.society-registration-container input[type="password"]:focus,
-.society-registration-container input[type="email"]:focus,
-.society-registration-container select:focus,
-.password-field input:focus,
-.password-field-admin input:focus {
-    border-color: rgba(16, 185, 129, 0.6);
-    background: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), 0 0 20px rgba(16, 185, 129, 0.08);
-}
-
-/* ── Buttons ──────────────────────────────────────────────── */
-.society-registration-container button:not(.society-registration-sidebar button):not(.toggle-password) {
-    width: 100%;
-    padding: 13px;
-    margin-top: 8px;
-    border: none;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: 'Inter', sans-serif;
-    cursor: pointer;
-    letter-spacing: 0.3px;
-    background: linear-gradient(135deg, #315e87 0%, #1e4a6d 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 16px rgba(49, 94, 135, 0.45);
-    transition: all 0.25s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.society-registration-container button:not(.society-registration-sidebar button):not(.toggle-password)::before {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%;
-    width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
-    transition: left 0.4s ease;
-}
-
-.society-registration-container button:not(.society-registration-sidebar button):not(.toggle-password):hover {
-    background: linear-gradient(135deg, #3b70a0 0%, #254f75 100%);
-    box-shadow: 0 6px 24px rgba(49, 94, 135, 0.6);
-    transform: translateY(-1px);
-}
-
-.society-registration-container button:not(.society-registration-sidebar button):not(.toggle-password):hover::before {
-    left: 100%;
-}
-
-.society-registration-container button:not(.society-registration-sidebar button):not(.toggle-password):active {
-    transform: translateY(0px);
-    box-shadow: 0 2px 10px rgba(49, 94, 135, 0.4);
-}
-
-/* ── Password field wrappers ──────────────────────────────── */
-.password-field {
-    position: relative;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-.password-field-admin {
-    position: relative;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-/* ── Eye icon ─────────────────────────────────────────────── */
-.toggle-password {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-70%);
-    cursor: pointer;
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.45);
-    display: flex;
-    align-items: center;
-    transition: color 0.2s ease;
-    background: transparent;
-    border: none;
-    padding: 0;
-    width: auto;
-    margin: 0;
-}
-
-.toggle-password:hover {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-/* ── Auth form (legacy fallback) ──────────────────────────── */
 .auth-form {
-    background: rgba(255, 255, 255, 0.07);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #ffffff;
     padding: 30px;
-    border-radius: 16px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 400px;
     display: flex;
@@ -334,91 +36,208 @@ h2 {
 }
 
 .auth-form input {
-    margin-bottom: 12px;
-    padding: 12px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 8px;
-    font-size: 14px;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
     outline: none;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.08);
-    transition: border-color 0.2s;
+    color: #333;
+    background: #f8f8f8;
 }
 
-.auth-form input::placeholder { color: rgba(255,255,255,0.35); }
-.auth-form input:focus { border-color: rgba(16, 185, 129, 0.6); }
+.auth-form input::placeholder {
+    color: #888;
+}
 
 .auth-form button {
-    padding: 12px;
-    background: linear-gradient(135deg, #315e87, #1e4a6d);
+    padding: 10px;
+    background: #356999; /* Darker shade */
     border: none;
-    border-radius: 8px;
+    border-radius: 5px;
     color: white;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 16px;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: background 0.3s ease;
 }
 
 .auth-form button:hover {
-    background: linear-gradient(135deg, #3b70a0, #254f75);
-    transform: translateY(-1px);
+    background: #274f75; /* Darker on hover */
 }
 
-/* ── Links ────────────────────────────────────────────────── */
-.auth-container p { margin-top: 10px; }
+.auth-container p {
+    margin-top: 10px;
+}
 
-.auth-container a,
+.auth-container a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.auth-container a:hover {
+    color: #f0f0f0;
+}
+
+.role-select {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    outline: none;
+    color: #888;
+    background: #f8f8f8;
+}
+
+/* Society Registration page */
+.society-registration-container {
+    background-color: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.society-registration-container h2 {
+    color: #356999; /* Matching darker shade */
+    margin-bottom: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.society-registration-container input[type="text"],
+.society-registration-container input[type="password"],
+.society-registration-container input[type="email"],
+.society-registration-container select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    outline: none;
+    color: #333;
+    background: #f8f8f8;
+}
+
+.society-registration-container input[type="text"]:focus,
+.society-registration-container input[type="password"]:focus,
+.society-registration-container input[type="email"]:focus,
+.society-registration-container select:focus {
+    border: 2px solid #356999;
+}
+
+.society-registration-container button {
+    padding: 12px;
+    width: 100%;
+    background-color: #356999; /* Darker shade */
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.3s ease;
+}
+
+.society-registration-container button:hover {
+    background-color: #274f75; /* Hover effect */
+}
+
+/* Sidebar for New and Existing Society options */
+.society-registration-sidebar {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.society-registration-container {
+    backdrop-filter: blur(6px);
+}
+
+
+.society-registration-sidebar button {
+    background-color: transparent;
+    border: 2px solid #356999;
+    padding: 10px 20px;
+    border-radius: 5px;
+    color: #356999;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.society-registration-sidebar button:hover {
+    background-color: #356999;
+    color: white;
+}
+
+/* Media Queries for responsiveness */
+@media (max-width: 768px) {
+    .society-registration-container {
+        width: 90%;
+    }
+}
+
+/* Match link styles with button color */
 .signup-link-container p,
 .set-password-link,
 .signup-link {
-    color: rgba(16, 185, 129, 0.9) !important;
+    color: #356999 !important;
     text-decoration: none;
-    font-weight: 500;
-    font-size: 13px;
-    transition: color 0.2s ease;
+    font-weight: bold;
+    transition: color 0.3s ease;
 }
 
-.auth-container a:hover,
 .signup-link-container p:hover,
 .set-password-link:hover,
 .signup-link:hover {
-    color: #10b981 !important;
+    color: #274f75 !important;
     text-decoration: underline;
 }
 
-.signup-link-container {
-    margin-top: 16px;
-    text-align: center;
+.password-field {
+    position: relative;
+    width: 100vh;
+    max-width: 500px;
+}
+.password-field-admin {
+    position: relative;
+    width: 100vh;
+    max-width: 300px;
+}
+.password-field input {
+    width: 100vh;
+    max-width: 500px;
+    padding-right: 45px;
+    box-sizing: border-box;
+}
+.password-field-admin input {
+    width: 100vh;
+    max-width: 300px;
+    padding-right: 45px;
+    box-sizing: border-box;
+}
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 38%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 18px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
 }
 
-.signup-link-container p {
-    color: rgba(255,255,255,0.45) !important;
-    font-size: 13px;
-    margin: 0;
-}
 
-/* ── Role select ──────────────────────────────────────────── */
-.role-select {
-    margin-bottom: 12px;
-    padding: 12px 14px;
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 8px;
-    font-size: 14px;
-    outline: none;
-    color: rgba(255,255,255,0.7);
-    background: rgba(255,255,255,0.08);
-}
 
-/* ── Responsive ───────────────────────────────────────────── */
-@media (max-width: 500px) {
-    .society-registration-container {
-        padding: 28px 20px 24px;
-        border-radius: 16px;
-    }
-
-    .society-registration-sidebar button {
-        font-size: 12px;
-        padding: 8px 10px;
-    }
-}

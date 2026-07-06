@@ -52,9 +52,8 @@ public class BillDataAssemblerService {
         Map<String, Object> data = new HashMap<>();
 
         // ── Resident / society info ──────────────────────────────────────────
-        data.put("mem_id",           resident != null ? resident.getMem_id()   : "N/A");
-        data.put("resident_name",    resident != null && resident.getName() != null ? resident.getName() : "N/A");
-        data.put("email",            resident != null ? resident.getEmail()     : "");
+        data.put("mem_id",       resident != null ? resident.getMem_id()   : "N/A");
+        data.put("email",        resident != null ? resident.getEmail()     : "");
         data.put("flat_no",      flat     != null ? flat.getFlat_no()       : "N/A");
         data.put("mygateNo",     resident != null ? resident.getMygate_no() : mygateNo);
         data.put("society_name", society  != null ? society.getName()       : "");
@@ -63,10 +62,6 @@ public class BillDataAssemblerService {
         data.put("locality",     society  != null ? society.getLocality()   : "");
         data.put("city",         society  != null ? society.getCity()       : "");
         data.put("pincode",      society  != null ? society.getPincode()    : "");
-
-        String occType = flat != null ? flat.getOccupancy_type() : "OWNER";
-        String displayOccType = "OWNER".equalsIgnoreCase(occType) ? "OWNER" : "RENTAL";
-        data.put("occupancy_type", displayOccType);
 
         data.put("due_date", bill != null ? bill.getDue_date() : "");
 

@@ -1,10 +1,8 @@
 package com.example.societyhub.controller;
 
-import com.example.societyhub.model.Bill;
 import com.example.societyhub.model.ChargeType;
 import com.example.societyhub.service.BillingService;
 import com.example.societyhub.service.ChargeTypeService;
-import com.example.societyhub.service.DBHandler;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -27,15 +25,12 @@ public class ChargeTypeController {
 
     private final ChargeTypeService chargeTypeService;
     private final BillingService billingService;
-    private final DBHandler dbHandler;
 
     @Autowired
     public ChargeTypeController(ChargeTypeService chargeTypeService,
-                                 BillingService billingService,
-                                 DBHandler dbHandler) {
+                                 BillingService billingService) {
         this.chargeTypeService = chargeTypeService;
         this.billingService = billingService;
-        this.dbHandler = dbHandler;
     }
 
     // ─── CHARGE TYPE CRUD (REST + Thymeleaf compatible) ─────────────────────────
@@ -47,7 +42,7 @@ public class ChargeTypeController {
     public String listChargeTypes(Model model, HttpSession session) {
         Integer sid = (Integer) session.getAttribute("adminSocietyId");
         if (sid == null) {
-            return "redirect:/login";
+            return "error";
         }
 
         try {
@@ -55,14 +50,6 @@ public class ChargeTypeController {
             model.addAttribute("chargeTypes", chargeTypes);
             model.addAttribute("adminSocietyId", sid);
             model.addAttribute("role", "admin");
-
-            // Load existing bill contributions for this society
-            Bill bill = dbHandler.fetchBillDetails(sid);
-            if (bill == null) {
-                bill = new Bill(); // empty defaults (all null -> 0 in template)
-            }
-            model.addAttribute("bill", bill);
-
             return "admin/bill_form";
         } catch (Exception e) {
             e.printStackTrace();
@@ -186,52 +173,6 @@ public class ChargeTypeController {
     }
 
     // ─── BILL GENERATION ────────────────────────────────────────────────────────
-
-    /**
-     * Save static bill contribution fields (admin only).
-     */
-    @PostMapping("/update-contributions")
-    public String updateContributions(
-            @RequestParam(defaultValue = "0") Integer maintenance_contribution,
-            @RequestParam(defaultValue = "0") Integer housing_board_contribution,
-            @RequestParam(defaultValue = "0") Integer property_tax_contribution,
-            @RequestParam(defaultValue = "0") Integer sinking_fund,
-            @RequestParam(defaultValue = "0") Integer reserve_mhada_service_charge,
-            @RequestParam(defaultValue = "0") Integer sub_charge,
-            @RequestParam(defaultValue = "0") Integer fine,
-            @RequestParam(defaultValue = "0") Integer building_dev_fund,
-            @RequestParam(defaultValue = "0") Integer other,
-            HttpSession session,
-            RedirectAttributes redirectAttributes) {
-
-        Integer sid = (Integer) session.getAttribute("adminSocietyId");
-        Integer memId = (Integer) session.getAttribute("adminMemId");
-        if (sid == null || memId == null || !billingService.isAdmin(memId)) {
-            redirectAttributes.addFlashAttribute("error", "Unauthorized. Only admins can update contributions.");
-            return "redirect:/api/charges";
-        }
-
-        try {
-            Bill bill = new Bill();
-            bill.setMaintenance_contribution(maintenance_contribution);
-            bill.setHousing_board_contribution(housing_board_contribution);
-            bill.setProperty_tax_contribution(property_tax_contribution);
-            bill.setSinking_fund(sinking_fund);
-            bill.setReserve_mhada_service_charge(reserve_mhada_service_charge);
-            bill.setSub_charge(sub_charge);
-            bill.setFine(fine);
-            bill.setBuilding_dev_fund(building_dev_fund);
-            bill.setOther(other);
-
-            dbHandler.updateBillContributions(sid, bill);
-            redirectAttributes.addFlashAttribute("success", "Bill contributions saved successfully.");
-        } catch (Exception e) {
-            e.printStackTrace();
-            redirectAttributes.addFlashAttribute("error", "Failed to save contributions: " + e.getMessage());
-        }
-
-        return "redirect:/api/charges";
-    }
 
     /**
      * Generate monthly bills for the society.

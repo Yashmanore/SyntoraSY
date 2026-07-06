@@ -29,8 +29,6 @@ public class EmailOrchestrationService {
     /* ===== Monthly Bills ===== */
 
     public void sendMonthlyBills(int sid) throws Exception {
-        com.example.societyhub.model.Bill latestBill = dbHandler.fetchBillDetails(sid);
-        String month = (latestBill != null) ? latestBill.getMonth() : "";
 
         List<Resident> residents = dbHandler.getResident(sid);
 
@@ -39,7 +37,7 @@ public class EmailOrchestrationService {
             Map<String, Object> data =
                     assemblerService.build(
                             resident.getMygate_no(),
-                            month,
+                            "",
                             "Pending",
                             sid
                     );

@@ -309,6 +309,8 @@ public class DBHandler {
     public void addResident(Resident resident, int societyId) throws Exception {
 
         String query = "INSERT INTO resident (mem_id, age, contact_no, isadmin, mygate_no, bhk, email, is_tenant, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // SQL query to insert a new resident
+        String query = "insert into resident (mem_id, sid, name, room_no, mr_ms, gender, age, contact_no, isadmin, mygate_no, bhk, email) values (?, ?, ?, ?, ?, ?, ?, ?, false, ?, ?, ?)";
         String billInsert =
                 "INSERT INTO resident_bill(mygate_no,year, january,february,march,april,may,june,july,august,september,october,november,december) " +
                         "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
@@ -809,10 +811,7 @@ public class DBHandler {
     public Bill fetchBillDetails(int sid) throws SQLException {
         Bill bill = null;
         try (Connection connection = dataSource.getConnection()) {
-            String query = "SELECT id, sid, due_date, month, year, " +
-                    "maintenance_contribution, housing_board_contribution, property_tax_contribution, " +
-                    "sinking_fund, reserve_mhada_service_charge, sub_charge, fine, " +
-                    "building_dev_fund, other FROM bill WHERE sid = ? ORDER BY id DESC LIMIT 1";
+            String query = "SELECT id, sid, due_date, created_at, month, year FROM bill WHERE sid = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setInt(1, sid);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -821,17 +820,12 @@ public class DBHandler {
                         bill.setId(resultSet.getInt("id"));
                         bill.setSid(resultSet.getInt("sid"));
                         bill.setDue_date(String.valueOf(resultSet.getDate("due_date")));
+                        Timestamp ts = resultSet.getTimestamp("created_at");
+                        if (ts != null) {
+                            bill.setCreated_at(ts.toLocalDateTime());
+                        }
                         bill.setMonth(resultSet.getString("month"));
                         bill.setYear(resultSet.getInt("year"));
-                        bill.setMaintenance_contribution(resultSet.getInt("maintenance_contribution"));
-                        bill.setHousing_board_contribution(resultSet.getInt("housing_board_contribution"));
-                        bill.setProperty_tax_contribution(resultSet.getInt("property_tax_contribution"));
-                        bill.setSinking_fund(resultSet.getInt("sinking_fund"));
-                        bill.setReserve_mhada_service_charge(resultSet.getInt("reserve_mhada_service_charge"));
-                        bill.setSub_charge(resultSet.getInt("sub_charge"));
-                        bill.setFine(resultSet.getInt("fine"));
-                        bill.setBuilding_dev_fund(resultSet.getInt("building_dev_fund"));
-                        bill.setOther(resultSet.getInt("other"));
                     }
                 }
             }
@@ -842,10 +836,7 @@ public class DBHandler {
     public Bill fetchBill(String mygate_no, String month, int sid) throws SQLException {
         Bill bill = null;
         try (Connection connection = dataSource.getConnection()) {
-            String query = "SELECT id, sid, due_date, month, year, " +
-                    "maintenance_contribution, housing_board_contribution, property_tax_contribution, " +
-                    "sinking_fund, reserve_mhada_service_charge, sub_charge, fine, " +
-                    "building_dev_fund, other FROM bill WHERE sid = ? AND month = ?";
+            String query = "SELECT id, sid, due_date, created_at, month, year FROM bill WHERE sid = ? AND month = ?";
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
                 preparedStatement.setInt(1, sid);
                 preparedStatement.setString(2, month.toLowerCase());
@@ -855,80 +846,17 @@ public class DBHandler {
                         bill.setId(resultSet.getInt("id"));
                         bill.setSid(resultSet.getInt("sid"));
                         bill.setDue_date(String.valueOf(resultSet.getDate("due_date")));
+                        Timestamp ts = resultSet.getTimestamp("created_at");
+                        if (ts != null) {
+                            bill.setCreated_at(ts.toLocalDateTime());
+                        }
                         bill.setMonth(resultSet.getString("month"));
                         bill.setYear(resultSet.getInt("year"));
-                        bill.setMaintenance_contribution(resultSet.getInt("maintenance_contribution"));
-                        bill.setHousing_board_contribution(resultSet.getInt("housing_board_contribution"));
-                        bill.setProperty_tax_contribution(resultSet.getInt("property_tax_contribution"));
-                        bill.setSinking_fund(resultSet.getInt("sinking_fund"));
-                        bill.setReserve_mhada_service_charge(resultSet.getInt("reserve_mhada_service_charge"));
-                        bill.setSub_charge(resultSet.getInt("sub_charge"));
-                        bill.setFine(resultSet.getInt("fine"));
-                        bill.setBuilding_dev_fund(resultSet.getInt("building_dev_fund"));
-                        bill.setOther(resultSet.getInt("other"));
                     }
                 }
             }
         }
         return bill;
-    }
-
-    /**
-     * Update the static contribution columns on the latest bill record for a society.
-     * If no bill record exists, inserts a stub record first.
-     */
-    public void updateBillContributions(int sid, Bill bill) throws SQLException {
-        // Check if a bill exists for this society
-        String checkQuery = "SELECT id FROM bill WHERE sid = ? ORDER BY id DESC LIMIT 1";
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement checkStmt = connection.prepareStatement(checkQuery)) {
-            connection.setAutoCommit(false);
-            checkStmt.setInt(1, sid);
-            ResultSet rs = checkStmt.executeQuery();
-
-            if (rs.next()) {
-                // Update existing record
-                int billId = rs.getInt("id");
-                String updateQuery = "UPDATE bill SET " +
-                        "maintenance_contribution = ?, housing_board_contribution = ?, " +
-                        "property_tax_contribution = ?, sinking_fund = ?, " +
-                        "reserve_mhada_service_charge = ?, sub_charge = ?, " +
-                        "fine = ?, building_dev_fund = ?, other = ? " +
-                        "WHERE id = ?";
-                try (PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
-                    updateStmt.setInt(1, bill.getMaintenance_contribution() != null ? bill.getMaintenance_contribution() : 0);
-                    updateStmt.setInt(2, bill.getHousing_board_contribution() != null ? bill.getHousing_board_contribution() : 0);
-                    updateStmt.setInt(3, bill.getProperty_tax_contribution() != null ? bill.getProperty_tax_contribution() : 0);
-                    updateStmt.setInt(4, bill.getSinking_fund() != null ? bill.getSinking_fund() : 0);
-                    updateStmt.setInt(5, bill.getReserve_mhada_service_charge() != null ? bill.getReserve_mhada_service_charge() : 0);
-                    updateStmt.setInt(6, bill.getSub_charge() != null ? bill.getSub_charge() : 0);
-                    updateStmt.setInt(7, bill.getFine() != null ? bill.getFine() : 0);
-                    updateStmt.setInt(8, bill.getBuilding_dev_fund() != null ? bill.getBuilding_dev_fund() : 0);
-                    updateStmt.setInt(9, bill.getOther() != null ? bill.getOther() : 0);
-                    updateStmt.setInt(10, billId);
-                    updateStmt.executeUpdate();
-                }
-            } else {
-                // Insert a stub bill record with just contributions
-                String insertQuery = "INSERT INTO bill (sid, maintenance_contribution, housing_board_contribution, " +
-                        "property_tax_contribution, sinking_fund, reserve_mhada_service_charge, " +
-                        "sub_charge, fine, building_dev_fund, other) VALUES (?,?,?,?,?,?,?,?,?,?)";
-                try (PreparedStatement insertStmt = connection.prepareStatement(insertQuery)) {
-                    insertStmt.setInt(1, sid);
-                    insertStmt.setInt(2, bill.getMaintenance_contribution() != null ? bill.getMaintenance_contribution() : 0);
-                    insertStmt.setInt(3, bill.getHousing_board_contribution() != null ? bill.getHousing_board_contribution() : 0);
-                    insertStmt.setInt(4, bill.getProperty_tax_contribution() != null ? bill.getProperty_tax_contribution() : 0);
-                    insertStmt.setInt(5, bill.getSinking_fund() != null ? bill.getSinking_fund() : 0);
-                    insertStmt.setInt(6, bill.getReserve_mhada_service_charge() != null ? bill.getReserve_mhada_service_charge() : 0);
-                    insertStmt.setInt(7, bill.getSub_charge() != null ? bill.getSub_charge() : 0);
-                    insertStmt.setInt(8, bill.getFine() != null ? bill.getFine() : 0);
-                    insertStmt.setInt(9, bill.getBuilding_dev_fund() != null ? bill.getBuilding_dev_fund() : 0);
-                    insertStmt.setInt(10, bill.getOther() != null ? bill.getOther() : 0);
-                    insertStmt.executeUpdate();
-                }
-            }
-            connection.commit();
-        }
     }
 
 
