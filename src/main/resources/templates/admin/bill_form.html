@@ -379,8 +379,9 @@
                             <option value="TENANT" th:selected="${charge.applicable_to == 'TENANT'}">TENANT</option>
                         </select>
                     </td>
-                    <td style="text-align: center;">
-                        <button type="submit" class="btn-update"><i class="bi bi-save me-1"></i>Save</button>
+                    <td style="text-align: center; white-space: nowrap;">
+                        <button type="submit" class="btn-update" style="margin-right: 5px;"><i class="bi bi-save me-1"></i>Save</button>
+                        <button type="button" class="btn-delete" th:onclick="'deleteCharge(' + ${charge.id} + ')'"><i class="bi bi-trash me-1"></i>Delete</button>
                     </td>
                 </form>
             </tr>
@@ -471,6 +472,16 @@
         lockBadge.innerHTML = '<i class="bi bi-unlock-fill"></i> Editing';
         lockBadge.style.background = '#dcfce7';
         lockBadge.style.color = '#166534';
+    }
+
+    function deleteCharge(id) {
+        if (confirm('Are you sure you want to delete this charge type?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/charges/deactivate/' + id;
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 </script>
 </body>
