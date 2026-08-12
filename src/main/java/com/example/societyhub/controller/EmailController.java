@@ -120,9 +120,11 @@ public class EmailController {
             );
 
         } catch (Exception e) {
-            log.error("Receipt email failed", e);
+            log.error("Receipt email failed: {}", e.getMessage(), e);
+            // Return the real error so we can diagnose on the frontend
+            String rootCause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to send receipt."));
+                    .body(Map.of("error", "Failed to send receipt: " + rootCause));
         }
     }
 
