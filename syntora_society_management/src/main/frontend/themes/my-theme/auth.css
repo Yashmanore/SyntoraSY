@@ -1,0 +1,252 @@
+/* Existing styles for login and auth pages */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    height: 100%;
+    background: linear-gradient(135deg, #5f7c99, #4a6784) !important;
+    /* Updated gradient */
+}
+
+.auth-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: white;
+}
+
+h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #356999;
+    /* Darker shade of gradient */
+}
+
+.auth-form {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-form input {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    outline: none;
+    color: #333;
+    background: #f8f8f8;
+}
+
+.auth-form input::placeholder {
+    color: #888;
+}
+
+.auth-form button {
+    padding: 10px;
+    background: #356999;
+    /* Darker shade */
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.auth-form button:hover {
+    background: #274f75;
+    /* Darker on hover */
+}
+
+.auth-container p {
+    margin-top: 10px;
+}
+
+.auth-container a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.auth-container a:hover {
+    color: #f0f0f0;
+}
+
+.role-select {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    outline: none;
+    color: #888;
+    background: #f8f8f8;
+}
+
+/* Society Registration page */
+.society-registration-container {
+    background-color: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.society-registration-container h2 {
+    color: #356999;
+    /* Matching darker shade */
+    margin-bottom: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.society-registration-container input[type="text"],
+.society-registration-container input[type="password"],
+.society-registration-container input[type="email"],
+.society-registration-container select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    outline: none;
+    color: #333;
+    background: #f8f8f8;
+}
+
+.society-registration-container input[type="text"]:focus,
+.society-registration-container input[type="password"]:focus,
+.society-registration-container input[type="email"]:focus,
+.society-registration-container select:focus {
+    border: 2px solid #356999;
+}
+
+.society-registration-container button {
+    padding: 12px;
+    width: 100%;
+    background-color: #356999;
+    /* Darker shade */
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.3s ease;
+}
+
+.society-registration-container button:hover {
+    background-color: #274f75;
+    /* Hover effect */
+}
+
+/* Sidebar for New and Existing Society options */
+.society-registration-sidebar {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.society-registration-container {
+    backdrop-filter: blur(6px);
+}
+
+
+.society-registration-sidebar button {
+    background-color: transparent;
+    border: 2px solid #356999;
+    padding: 10px 20px;
+    border-radius: 5px;
+    color: #356999;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.society-registration-sidebar button:hover {
+    background-color: #356999;
+    color: white;
+}
+
+/* Media Queries for responsiveness */
+@media (max-width: 768px) {
+    .society-registration-container {
+        width: 90%;
+    }
+}
+
+/* Match link styles with button color */
+.signup-link-container p,
+.set-password-link,
+.signup-link {
+    color: #356999 !important;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.signup-link-container p:hover,
+.set-password-link:hover,
+.signup-link:hover {
+    color: #274f75 !important;
+    text-decoration: underline;
+}
+
+.password-field {
+    position: relative;
+    width: 100vh;
+    max-width: 500px;
+}
+
+.password-field-admin {
+    position: relative;
+    width: 100vh;
+    max-width: 300px;
+}
+
+.password-field input {
+    width: 100vh;
+    max-width: 500px;
+    padding-right: 45px;
+    box-sizing: border-box;
+}
+
+.password-field-admin input {
+    width: 100vh;
+    max-width: 300px;
+    padding-right: 45px;
+    box-sizing: border-box;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 38%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 18px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+}
