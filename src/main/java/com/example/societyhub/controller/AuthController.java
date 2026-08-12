@@ -53,7 +53,7 @@ public class AuthController {
 
             String hashedPassword = passwordService.encode(admin.getAdminPassword());
 
-            dbHandler.registerAdmin(admin.getEmail_id(), hashedPassword);
+            dbHandler.registerAdmin(admin.getName(), admin.getEmail_id(), hashedPassword);
             dbHandler.update(societyId,
                     admin.getName(),
                     admin.getContact_no(),

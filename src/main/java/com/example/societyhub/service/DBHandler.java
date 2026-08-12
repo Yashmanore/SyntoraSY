@@ -284,23 +284,32 @@ public class DBHandler {
     }
 
     // Method to register a new user
-    public void registerAdmin(String email, String hashedPassword) throws Exception {
+    public void registerAdmin(String name, String email, String hashedPassword) throws Exception {
         System.out.println("Welcome 3");
-        String query = "insert into login (email_id, password) values (?, ?)";
+        String loginQuery = "insert into login (email_id, password) values (?, ?)";
+        String adminQuery = "INSERT INTO admin (name, username, password) VALUES (?, ?, ?) ON CONFLICT (username) DO NOTHING";
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
+             PreparedStatement loginStmt = connection.prepareStatement(loginQuery);
+             PreparedStatement adminStmt = connection.prepareStatement(adminQuery)) {
             connection.setAutoCommit(false);
             System.out.println("Welcome 4");
-            statement.setString(1, email);
-            statement.setString(2, hashedPassword);
-            statement.executeUpdate();
+
+            // Insert into login table
+            loginStmt.setString(1, email);
+            loginStmt.setString(2, hashedPassword);
+            loginStmt.executeUpdate();
+
+            // Insert into admin table so the user has admin role and can configure bills
+            adminStmt.setString(1, name);
+            adminStmt.setString(2, email);
+            adminStmt.setString(3, hashedPassword);
+            adminStmt.executeUpdate();
 
             connection.commit();
+            System.out.println("Admin entry created in both login and admin tables for: " + email);
         } catch (Exception e) {
-            // Rollback the transaction in case of an error
-//            connection.rollback();
             e.printStackTrace();
-            throw new SQLException("Error ", e);
+            throw new SQLException("Error during admin registration", e);
         }
     }
 
