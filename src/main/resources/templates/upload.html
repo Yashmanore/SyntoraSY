@@ -133,16 +133,18 @@
             body: formData
         })
         .then(response => {
-            if (response.ok) {
-                // Redirect to admin.html after successful upload
-                window.location.href = '/admin';
-            } else {
-                throw new Error('File upload failed');
-            }
+            return response.text().then(text => {
+                if (response.ok) {
+                    alert('Upload successful! Redirecting to dashboard...');
+                    window.location.href = '/admin';
+                } else {
+                    alert('Upload failed: ' + text);
+                }
+            });
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Failed to upload file: ' + error.message);
+            alert('Network error: ' + error.message);
         });
     });
 </script>

@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDate;
@@ -32,13 +33,32 @@ public class ExcelService {
     }
 
     @Transactional
+    public void processExcelStream(InputStream inputStream, int societySid) throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook(inputStream)) {
+            processWorkbook(workbook, societySid);
+        } catch (Exception e) {
+            log.error("Excel stream processing failed", e);
+            throw new IOException("Excel processing failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional
     public void processExcelFile(File file, int societySid) throws IOException {
 
-        try (Connection conn = dataSource.getConnection();
-             FileInputStream fis = new FileInputStream(file);
+        try (FileInputStream fis = new FileInputStream(file);
              XSSFWorkbook workbook = new XSSFWorkbook(fis)) {
+            processWorkbook(workbook, societySid);
+        } catch (Exception e) {
+            log.error("Excel file processing failed", e);
+            throw new IOException("Excel processing failed: " + e.getMessage(), e);
+        }
+    }
 
+    private void processWorkbook(XSSFWorkbook workbook, int societySid) throws Exception {
+
+        try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
+
 
             validateSociety(conn, societySid);
 
@@ -190,10 +210,6 @@ public class ExcelService {
                 insertFlatStmt.executeBatch();
                 conn.commit();
             }
-
-        } catch (Exception e) {
-            log.error("Excel processing failed", e);
-            throw new IOException("Excel processing failed", e);
         }
     }
 

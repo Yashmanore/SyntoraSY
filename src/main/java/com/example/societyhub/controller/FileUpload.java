@@ -9,7 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
+import java.io.InputStream;
 
 @RestController
 @RequestMapping("/api")
@@ -46,27 +46,18 @@ public class FileUpload {
                     .body("No file selected");
         }
 
-        File tempFile = null;
+        try (InputStream inputStream = file.getInputStream()) {
 
-        try {
-            tempFile = File.createTempFile("upload-", ".xlsx");
-            file.transferTo(tempFile);
+            log.info("File received: {}, size: {} bytes", file.getOriginalFilename(), file.getSize());
 
-            log.info("File uploaded successfully: {}", tempFile.getAbsolutePath());
-
-            excelService.processExcelFile(tempFile, sid);
+            excelService.processExcelStream(inputStream, sid);
 
             return ResponseEntity.ok("File processed successfully");
 
         } catch (Exception e) {
-            log.error("File upload failed", e);
+            log.error("File upload failed: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("File processing failed");
-
-        } finally {
-            if (tempFile != null && tempFile.exists()) {
-                tempFile.delete();
-            }
+                    .body("File processing failed: " + e.getMessage());
         }
     }
 }
