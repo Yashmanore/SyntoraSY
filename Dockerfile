@@ -14,7 +14,7 @@ COPY types.d.ts .
 COPY vite.config.ts .
 
 # Package the application in production mode (skipping test suite for faster deployment)
-RUN ./mvnw clean package -Pproduction -DskipTests
+RUN mvn clean package -Pproduction -DskipTests
 
 # Run stage
 FROM eclipse-temurin:17-jre
