@@ -151,7 +151,16 @@ CREATE TABLE IF NOT EXISTS bill (
     sid INTEGER REFERENCES society(sid),
     due_date DATE,
     month VARCHAR(20),
-    year INTEGER
+    year INTEGER,
+    maintenance_contribution INTEGER DEFAULT 0,
+    housing_board_contribution INTEGER DEFAULT 0,
+    property_tax_contribution INTEGER DEFAULT 0,
+    sinking_fund INTEGER DEFAULT 0,
+    reserve_mhada_service_charge INTEGER DEFAULT 0,
+    sub_charge INTEGER DEFAULT 0,
+    fine INTEGER DEFAULT 0,
+    building_dev_fund INTEGER DEFAULT 0,
+    other INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS unit_bill_record (
@@ -177,3 +186,13 @@ CREATE TABLE IF NOT EXISTS bill_line_item (
 ALTER TABLE IF EXISTS flat ADD COLUMN IF NOT EXISTS occupancy_type VARCHAR(50) DEFAULT 'OWNER';
 ALTER TABLE IF EXISTS resident ADD COLUMN IF NOT EXISTS is_tenant BOOLEAN DEFAULT FALSE;
 ALTER TABLE IF EXISTS resident ADD COLUMN IF NOT EXISTS tenant_id INTEGER REFERENCES tenant(tenant_id);
+-- Bill contribution columns (added for existing deployments)
+ALTER TABLE IF EXISTS bill ADD COLUMN IF NOT EXISTS maintenance_contribution INTEGER DEFAULT 0;
+ALTER TABLE IF EXISTS bill ADD COLUMN IF NOT EXISTS housing_board_contribution INTEGER DEFAULT 0;
+ALTER TABLE IF EXISTS bill ADD COLUMN IF NOT EXISTS property_tax_contribution INTEGER DEFAULT 0;
+ALTER TABLE IF EXISTS bill ADD COLUMN IF NOT EXISTS sinking_fund INTEGER DEFAULT 0;
+ALTER TABLE IF EXISTS bill ADD COLUMN IF NOT EXISTS reserve_mhada_service_charge INTEGER DEFAULT 0;
+ALTER TABLE IF EXISTS bill ADD COLUMN IF NOT EXISTS sub_charge INTEGER DEFAULT 0;
+ALTER TABLE IF EXISTS bill ADD COLUMN IF NOT EXISTS fine INTEGER DEFAULT 0;
+ALTER TABLE IF EXISTS bill ADD COLUMN IF NOT EXISTS building_dev_fund INTEGER DEFAULT 0;
+ALTER TABLE IF EXISTS bill ADD COLUMN IF NOT EXISTS other INTEGER DEFAULT 0;
