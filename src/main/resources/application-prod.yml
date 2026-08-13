@@ -6,9 +6,9 @@ spring:
     web-application-type: servlet
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/society_management
-    username: postgres
-    password: Yashm123@
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/society_management}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:Yashm123@}
 
 #  jpa:
 #    hibernate:
