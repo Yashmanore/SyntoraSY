@@ -479,6 +479,13 @@
                 body: JSON.stringify({ mygate_no, selectedMonth: monthToSend, status, email })
             })
                 .then(response => {
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                        // Session expired — server returned HTML login page
+                        alert('Your session has expired. Please log in again.');
+                        window.location.href = '/login';
+                        return Promise.reject(new Error('Session expired'));
+                    }
                     if (!response.ok) {
                         return response.json().then(err => {
                             throw new Error(err.error || 'Server Error ' + response.status);
@@ -496,6 +503,7 @@
                     }, 3000);
                 })
                 .catch(error => {
+                    if (error.message === 'Session expired') return;
                     console.error('Error sending receipt:', error);
                     alert('Failed to send receipt: ' + error.message +
                         '\n\nMake sure you have generated bills for ' + selectedMonth + ' first.');
