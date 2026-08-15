@@ -24,7 +24,7 @@ public class MailService {
     @Value("${brevo.api.key:}")
     private String brevoApiKey;
 
-    @Value("${mail.from:societyhub18@gmail.com}")
+    @Value("${mail.from:societymgmt18@gmail.com}")
     private String fromEmail;
 
     @Value("${mail.from.name:Syntora Society Management}")
