@@ -11,20 +11,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Sends emails via the Resend HTTP API (uses HTTPS port 443).
+ * Sends emails via the Brevo HTTP API (uses HTTPS port 443).
  * This avoids SMTP port restrictions on Render and other cloud platforms.
  *
- * Free tier: 3,000 emails/month — https://resend.com
- *
- * Required environment variable: RESEND_API_KEY
+ * Required environment variable: BREVO_API_KEY
  */
 @Service
 public class MailService {
 
-    private static final String RESEND_API_URL = "https://api.resend.com/emails";
+    private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
-    @Value("${resend.api.key:}")
-    private String resendApiKey;
+    @Value("${brevo.api.key:}")
+    private String brevoApiKey;
 
     @Value("${mail.from:societyhub18@gmail.com}")
     private String fromEmail;
@@ -41,40 +39,40 @@ public class MailService {
             byte[] attachment,
             String filename
     ) {
-        if (resendApiKey == null || resendApiKey.isBlank()) {
+        if (brevoApiKey == null || brevoApiKey.isBlank()) {
             throw new RuntimeException(
-                "RESEND_API_KEY is not configured. Please set this environment variable."
+                "BREVO_API_KEY is not configured. Please set this environment variable."
             );
         }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(resendApiKey);
+        headers.set("api-key", brevoApiKey);
 
         Map<String, Object> payload = new HashMap<>();
-        payload.put("from", fromName + " <" + fromEmail + ">");
-        payload.put("to", List.of(to));
+        payload.put("sender", Map.of("name", fromName, "email", fromEmail));
+        payload.put("to", List.of(Map.of("email", to)));
         payload.put("subject", subject);
         // Send body as HTML paragraph, preserving line breaks
-        payload.put("html", "<pre style='font-family:sans-serif'>" + escapeHtml(body) + "</pre>");
+        payload.put("htmlContent", "<pre style='font-family:sans-serif'>" + escapeHtml(body) + "</pre>");
 
-        // Attach PDF if provided (Resend supports base64 attachments)
+        // Attach PDF if provided (Brevo supports base64 attachments)
         if (attachment != null && attachment.length > 0) {
             Map<String, String> att = new HashMap<>();
-            att.put("filename", filename);
+            att.put("name", filename);
             att.put("content", Base64.getEncoder().encodeToString(attachment));
-            payload.put("attachments", List.of(att));
+            payload.put("attachment", List.of(att));
         }
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
 
         try {
             ResponseEntity<String> response =
-                    restTemplate.postForEntity(RESEND_API_URL, request, String.class);
+                    restTemplate.postForEntity(BREVO_API_URL, request, String.class);
 
             if (!response.getStatusCode().is2xxSuccessful()) {
                 throw new RuntimeException(
-                    "Resend API error " + response.getStatusCode() + ": " + response.getBody()
+                    "Brevo API error " + response.getStatusCode() + ": " + response.getBody()
                 );
             }
         } catch (Exception e) {
